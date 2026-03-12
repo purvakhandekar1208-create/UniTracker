@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./index.css";
 
 // Components
@@ -19,6 +19,10 @@ import Attendance      from "./pages/mentee/Attendance";
 import MentorDashboard from "./pages/mentor/Dashboard";
 import MenteesList     from "./pages/mentor/MenteesList";
 import MenteeDetail    from "./pages/mentor/MenteeDetail";
+
+// ✅ Real API
+import { getAllMentees, addRemark, getMenteeRemarksById } from "./api/api";
+import { Avatar } from "./assets/Icons";
 
 // ─── Mentee Academics wrapper (tabs: Marks / Courses / Attendance) ────────────
 function Academics() {
@@ -46,9 +50,13 @@ function Academics() {
 }
 
 // ─── Mentor My Batches page ───────────────────────────────────────────────────
-import { BATCHES } from "./api/mockData";
-
 function MyBatches({ onNavigate }) {
+  // ✅ Hardcoded batches (no DB table for batches yet)
+  const BATCHES = [
+    { id: 1, name: "B.Tech - Computer Engineering", div: "A", batch: 1, students: 25 },
+    { id: 2, name: "B.Tech - Computer Engineering", div: "B", batch: 2, students: 22 },
+  ];
+
   return (
     <div className="page">
       <div className="page-heading">
@@ -73,36 +81,78 @@ function MyBatches({ onNavigate }) {
 }
 
 // ─── Mentor Remarks page ─────────────────────────────────────────────────────
-import { MOCK_MENTEES } from "./api/mockData";
-import { Avatar } from "./assets/Icons";
-
 function Remarks() {
-  const [selected, setSelected] = useState(MOCK_MENTEES[0]);
-  const [text, setText]         = useState("");
+  const [mentees,  setMentees]  = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [text,     setText]     = useState("");
+  const [remarks,  setRemarks]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [posting,  setPosting]  = useState(false);
+
+  // ✅ Load all mentees from DB
+  useEffect(() => {
+    getAllMentees()
+      .then((data) => {
+        setMentees(data);
+        if (data.length > 0) setSelected(data[0]);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ✅ Load remarks when selected mentee changes
+  useEffect(() => {
+    if (!selected) return;
+    getMenteeRemarksById(selected.id)
+      .then(setRemarks)
+      .catch(console.error);
+  }, [selected]);
+
+  // ✅ Post new remark to DB
+  const handlePost = async () => {
+    if (!text.trim() || !selected) return;
+    setPosting(true);
+    try {
+      const newRemark = await addRemark(selected.id, text);
+      setRemarks((prev) => [newRemark, ...prev]);
+      setText("");
+    } catch (e) {
+      alert("Failed to post remark: " + e.message);
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  if (loading) return <div className="page"><div className="page-sub">Loading...</div></div>;
 
   return (
     <div className="page">
       <div className="page-heading">Remarks & Feedback</div>
       <div className="page-sub">Leave feedback for your mentees</div>
       <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20 }}>
+
         {/* Mentee list */}
         <div className="wcard" style={{ height: "fit-content" }}>
           <div className="wcard-head">
             <div className="wcard-title" style={{ fontSize: 13 }}>Mentees</div>
           </div>
           <div style={{ padding: 8 }}>
-            {MOCK_MENTEES.map((m) => (
+            {mentees.map((m) => (
               <div
                 key={m.id}
                 onClick={() => setSelected(m)}
                 style={{
                   display: "flex", alignItems: "center", gap: 9, padding: "10px",
                   borderRadius: 6, cursor: "pointer", marginBottom: 2,
-                  background: selected.id === m.id ? "var(--red-soft)" : "transparent",
+                  background: selected?.id === m.id ? "var(--red-soft)" : "transparent",
                 }}
               >
                 <Avatar name={m.name} size={26} />
-                <div style={{ fontSize: 13, color: selected.id === m.id ? "var(--red)" : "var(--text)", fontWeight: selected.id === m.id ? 600 : 400 }}>
+                <div style={{
+                  fontSize: 13,
+                  color: selected?.id === m.id ? "var(--red)" : "var(--text)",
+                  fontWeight: selected?.id === m.id ? 600 : 400
+                }}>
                   {m.name}
                 </div>
               </div>
@@ -114,7 +164,7 @@ function Remarks() {
         <div>
           <div className="wcard" style={{ marginBottom: 16 }}>
             <div className="wcard-head">
-              <div className="wcard-title">Add Remark for {selected.name}</div>
+              <div className="wcard-title">Add Remark for {selected?.name}</div>
             </div>
             <div className="wcard-body">
               <div className="form-group">
@@ -127,23 +177,32 @@ function Remarks() {
                   onChange={(e) => setText(e.target.value)}
                 />
               </div>
-              <button className="btn-red">Post Remark</button>
+              <button className="btn-red" onClick={handlePost} disabled={posting}>
+                {posting ? "Posting..." : "Post Remark"}
+              </button>
             </div>
           </div>
+
+          {/* Previous remarks from DB */}
           <div className="wcard">
             <div className="wcard-head"><div className="wcard-title">Previous Remarks</div></div>
             <div className="wcard-body">
-              <div className="remark-card">
-                <div className="remark-meta">You · 5 March 2025</div>
-                <div className="remark-text">Performance is good. Please maintain attendance above 75% going forward.</div>
-              </div>
-              <div className="remark-card">
-                <div className="remark-meta">You · 12 January 2025</div>
-                <div className="remark-text">Good progress on the ML course. Suggest completing DSA before semester end.</div>
-              </div>
+              {remarks.length === 0 ? (
+                <div className="page-sub">No remarks yet.</div>
+              ) : (
+                remarks.map((r) => (
+                  <div className="remark-card" key={r.id}>
+                    <div className="remark-meta">
+                      {r.mentor_name} · {r.remark_date}
+                    </div>
+                    <div className="remark-text">{r.message}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -163,11 +222,10 @@ const PAGE_TITLES = {
 
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user,         setUser]         = useState(null);
-  const [activePage,   setActivePage]   = useState("dashboard");
+  const [user,           setUser]           = useState(null);
+  const [activePage,     setActivePage]     = useState("dashboard");
   const [selectedMentee, setSelectedMentee] = useState(null);
 
-  // Derive topbar title
   const getTitle = () => {
     if (!user) return "";
     if (user.role === "mentee" && activePage === "dashboard")
@@ -187,7 +245,6 @@ export default function App() {
     setActivePage("mentee-detail");
   };
 
-  // ── Render page content ──
   const renderPage = () => {
     if (user.role === "mentor") {
       switch (activePage) {
@@ -217,7 +274,6 @@ export default function App() {
       }
     }
 
-    // Mentee pages
     switch (activePage) {
       case "dashboard":    return <MenteeDashboard user={user} />;
       case "academics":    return <Academics />;
@@ -232,12 +288,10 @@ export default function App() {
     }
   };
 
-  // ── Not logged in → show login ──
   if (!user) {
     return <Login onLogin={(u) => { setUser(u); setActivePage("dashboard"); }} />;
   }
 
-  // ── Logged in → show full app ──
   return (
     <div className="app-layout">
       <Sidebar

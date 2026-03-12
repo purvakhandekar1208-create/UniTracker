@@ -1,4 +1,5 @@
 package com.unitracker.config;
+
 import com.unitracker.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,30 +15,37 @@ import java.util.*;
 
 @Configuration @EnableWebSecurity @RequiredArgsConstructor
 public class SecurityConfig {
+
     private final JwtAuthFilter jwtAuthFilter;
-    @Value("${app.cors.allowed-origins}") private String origins;
+
+    @Value("${app.cors.allowed-origins}")
+    private String origins;
 
     @Bean
     public SecurityFilterChain chain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
+        return http
+            .csrf(AbstractHttpConfigurer::disable)
             .cors(c -> c.configurationSource(cors()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a -> a
-                .requestMatchers("/api/auth/**","/api/files/**").permitAll()
-                .requestMatchers("/api/mentor/**").hasRole("MENTOR")
-                .requestMatchers("/api/mentee/**").hasRole("MENTEE")
-                .anyRequest().authenticated())
+                .requestMatchers("/api/auth/**", "/api/files/**").permitAll()
+                .requestMatchers("/api/mentor/**").hasAnyAuthority("ROLE_MENTOR", "ROLE_mentor")
+                .requestMatchers("/api/mentee/**").hasAnyAuthority("ROLE_MENTEE", "ROLE_mentee")
+                .anyRequest().authenticated()
+            )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
+
     @Bean
     public CorsConfigurationSource cors() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(Arrays.asList(origins.split(",")));
-        c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
-        c.setAllowedHeaders(List.of("*")); c.setAllowCredentials(true);
+        c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        c.setAllowedHeaders(List.of("*"));
+        c.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
-        s.registerCorsConfiguration("/**", c); return s;
+        s.registerCorsConfiguration("/**", c);
+        return s;
     }
 }
-
