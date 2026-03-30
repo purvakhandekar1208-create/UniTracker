@@ -169,7 +169,7 @@ export default function Login({ onLogin }) {
             <div className="login-form">
 
               <label className="login-label">Full Name *</label>
-              <input className="login-input" placeholder="e.g. Aisha Patil"
+              <input className="login-input" placeholder="e.g. Aarushi Patel"
                 value={reg.name} onChange={e => setR("name", e.target.value)} onKeyDown={handleKeyDown} disabled={loading} />
 
               <label className="login-label">Email *</label>
