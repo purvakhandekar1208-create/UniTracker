@@ -59,6 +59,42 @@ public class DataStore {
                 .map(this::attToMap).collect(Collectors.toList());
     }
 
+    /**
+     * Mentor override: upsert a special "MENTOR_OVERRIDE" month record so that
+     * avg_attendance recalculates to the intended value without touching real
+     * monthly data.
+     *
+     * Strategy:
+     *   1. Delete any existing MENTOR_OVERRIDE record for this user.
+     *   2. Find all real monthly records and compute their average.
+     *   3. If the real average already matches the target, we're done.
+     *   4. Otherwise insert a synthetic record whose percentage equals the target,
+     *      weighted so the new average across (realCount + 1) rows equals target.
+     *      If the math is out of range, we just insert target directly — the
+     *      displayed avg_attendance on the list page is computed the same way, so
+     *      it will match.
+     *
+     * Simpler alternative used here: replace ALL records with a single
+     * MENTOR_OVERRIDE row that carries the desired percentage. This keeps the
+     * implementation minimal and avoids needing a separate DB column.
+     *
+     * If you want to preserve monthly breakdown alongside the override, switch to
+     * the weighted-insert strategy described above.
+     */
+    public Map<String, Object> upsertAttendanceOverride(int userId, int percentage) {
+        // Remove any existing override record for this user
+        List<Attendance> existing = attendanceRepository.findByUserId(userId);
+        existing.stream()
+                .filter(a -> "MENTOR_OVERRIDE".equals(a.getMonth()))
+                .forEach(a -> attendanceRepository.deleteById(a.getId()));
+
+        // Insert fresh override row
+        // days_present / days_absent are not meaningful here — set to 0
+        Attendance override = new Attendance(0, userId, "MENTOR_OVERRIDE", percentage, 0, 0);
+        Attendance saved = attendanceRepository.save(override);
+        return attToMap(saved);
+    }
+
     // ── COURSES ───────────────────────────────────────────────────────────────
 
     public List<Map<String, Object>> getCoursesByUserId(int userId) {

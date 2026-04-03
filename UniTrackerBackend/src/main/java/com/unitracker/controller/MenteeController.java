@@ -116,12 +116,14 @@ public class MenteeController {
     public ResponseEntity<List<Map<String, Object>>> marks(HttpServletRequest r) {
         return ResponseEntity.ok(dataStore.getMarksByUserId(uid(r)));
     }
+    
 
     // ── ATTENDANCE ────────────────────────────────────────────────────────────
     @GetMapping("/attendance")
     public ResponseEntity<List<Map<String, Object>>> attendance(HttpServletRequest r) {
         return ResponseEntity.ok(dataStore.getAttByUserId(uid(r)));
     }
+    
 
     // ── COURSES ───────────────────────────────────────────────────────────────
     @GetMapping("/courses")

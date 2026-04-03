@@ -37,7 +37,6 @@ export const login = async (email, password, role) => {
   return data;
 };
 
-// register accepts a single object with all fields
 export const register = async (fields) => {
   const data = await api("/api/auth/register", {
     method: "POST",
@@ -112,4 +111,11 @@ export const addRemark = (menteeId, message) =>
   api(`/api/mentor/mentees/${menteeId}/remarks`, {
     method: "POST",
     body: JSON.stringify({ message }),
+  });
+
+// ── NEW: Mentor updates a mentee's overall attendance percentage ──
+export const updateMenteeAttendance = (menteeId, percentage) =>
+  api(`/api/mentor/mentees/${menteeId}/attendance`, {
+    method: "PUT",
+    body: JSON.stringify({ percentage }),
   });
