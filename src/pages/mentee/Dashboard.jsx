@@ -1,31 +1,90 @@
 import { useState, useEffect } from "react";
 import { Icons } from "../../assets/Icons";
-import { getMenteeDashboard, getMenteeRemarks } from "../../api/api";
+import { getMenteeDashboard } from "../../api/api";
 
 export default function Dashboard({ user }) {
-  const [dashboard, setDashboard] = useState(null);
-  const [remarks,   setRemarks]   = useState([]);
-  const [loading,   setLoading]   = useState(true);
+  const [dash,    setDash]    = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getMenteeDashboard(), getMenteeRemarks()])
-      .then(([dash, rem]) => { setDashboard(dash); setRemarks(rem); })
+    getMenteeDashboard()
+      .then(setDash)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="page"><div className="page-sub">Loading dashboard...</div></div>;
 
-  const certs = dashboard?.certificates || [];
+  const certs   = dash?.certificates || [];
+  const remarks = dash?.remarks       || [];
+
+  // Profile completeness check
+  const missing = [];
+  if (!dash?.phone)        missing.push("your phone number");
+  if (!dash?.parent1Phone) missing.push("Parent 1 phone");
+  if (!dash?.parent2Phone) missing.push("Parent 2 phone");
+  const profileComplete = missing.length === 0;
 
   return (
     <div className="page">
-      {/* Stat Cards */}
-      <div className="stat-row" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+
+      {/* Profile incomplete banner */}
+      {!profileComplete && (
+        <div style={{
+          background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8,
+          padding: "12px 16px", marginBottom: 20, display: "flex", alignItems: "center",
+          gap: 12, fontSize: 13
+        }}>
+          <span style={{ fontSize: 20 }}>⚠️</span>
+          <div>
+            <strong>Complete your profile!</strong> Still missing: {missing.join(", ")}.
+            {" "}<span style={{ color: "var(--red)", textDecoration: "underline", cursor: "pointer" }}>
+              Go to Profile Settings →
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Academic info banner */}
+      {(dash?.department || dash?.batch) && (
+        <div className="wcard" style={{ marginBottom: 20, background: "var(--red)", color: "#fff" }}>
+          <div className="wcard-body" style={{ display: "flex", flexWrap: "wrap", gap: "10px 32px", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>Department</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{dash.department || "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>Year / Sem</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>
+                {dash.year ? `Year ${dash.year}` : "—"}{dash.semester ? ` / Sem ${dash.semester}` : ""}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>Roll No</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{dash.roll || "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>Division</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{dash.division || "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>Batch</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>{dash.batch || "—"}</div>
+            </div>
+            
+            
+            
+          </div>
+        </div>
+      )}
+
+      {/* Stat cards */}
+      <div className="stat-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
         {[
-          { Icon: Icons.Calendar, value: dashboard?.attendance ?? "—",   label: "Attendance"  },
-          { Icon: Icons.Chart,    value: dashboard?.gpa        ?? "—",   label: "Current GPA" },
-          { Icon: Icons.Award,    value: dashboard?.certCount  ?? certs.length, label: "Uploaded" },
+          { Icon: Icons.Calendar, value: dash?.avg_attendance != null ? `${dash.avg_attendance}%` : "—", label: "Attendance" },
+          { Icon: Icons.Chart,    value: "—",                                                             label: "Current GPA" },
+          { Icon: Icons.Award,    value: dash?.certificate_count ?? certs.length,                        label: "Certificates" },
+          { Icon: Icons.Book,     value: dash?.course_count ?? "—",                                      label: "Courses" },
         ].map(({ Icon, value, label }) => (
           <div className="stat-card" key={label}>
             <div className="stat-icon-circle"><Icon /></div>
@@ -35,51 +94,66 @@ export default function Dashboard({ user }) {
         ))}
       </div>
 
-      {/* Recent Uploads */}
+      {/* Mentor info */}
       <div className="wcard">
-        <div className="wcard-head">
-          <div className="wcard-title">Recent Uploads List</div>
+        <div className="wcard-head"><div className="wcard-title">👨‍🏫 Assigned Mentor</div></div>
+        <div className="wcard-body">
+          {dash?.mentor ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--red-lite)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>👤</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{dash.mentor.name}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{dash.mentor.email}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ color: "var(--muted)", fontSize: 13 }}>
+              No mentor assigned yet. You will be assigned a mentor once you join a batch.
+            </div>
+          )}
         </div>
-        {certs.length === 0 ? (
-          <div className="wcard-body"><div className="page-sub">No certificates uploaded yet.</div></div>
-        ) : (
-          <ul className="recent-list">
-            {certs.slice(0, 5).map((cert, i) => (
-              <li key={cert.id} className="recent-item">
-                <div>
-                  <span className="recent-num">{i + 1}.</span>
-                  <span className="recent-name">{cert.title ?? cert.name}</span>
-                </div>
-                {cert.file_path && (
-                  <a href={`http://localhost:8081/api/files/certificates/${cert.id}`}
-                     target="_blank" rel="noreferrer" className="btn-view-pdf">
-                    View PDF
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
-      {/* Mentor Remarks */}
-      <div className="wcard">
-        <div className="wcard-head">
-          <div className="wcard-title">💬 Mentor Remarks</div>
-        </div>
-        <div className="wcard-body">
-          {remarks.length === 0 ? (
-            <div className="page-sub">No remarks from your mentor yet.</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {/* Recent certificates */}
+        <div className="wcard">
+          <div className="wcard-head"><div className="wcard-title">Recent Certificates</div></div>
+          {certs.length === 0 ? (
+            <div className="wcard-body"><div className="page-sub">No certificates uploaded yet.</div></div>
           ) : (
-            remarks.map((r) => (
+            <ul className="recent-list">
+              {certs.slice(0, 5).map((cert, i) => (
+                <li key={cert.id} className="recent-item">
+                  <div>
+                    <span className="recent-num">{i + 1}.</span>
+                    <span className="recent-name">{cert.title ?? cert.name}</span>
+                  </div>
+                  {cert.file_path && (
+                    <a href={`http://localhost:8081/api/files/certificates/${cert.id}`}
+                       target="_blank" rel="noreferrer" className="btn-view-pdf">View PDF</a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Mentor remarks */}
+        <div className="wcard">
+          <div className="wcard-head"><div className="wcard-title">💬 Mentor Remarks</div></div>
+          <div className="wcard-body">
+            {remarks.length === 0 ? (
+              <div className="page-sub">No remarks from your mentor yet.</div>
+            ) : remarks.map(r => (
               <div className="remark-card" key={r.id}>
                 <div className="remark-meta">{r.mentor_name} · {r.remark_date}</div>
                 <div className="remark-text">{r.message}</div>
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
       </div>
+
     </div>
   );
 }

@@ -1,14 +1,11 @@
-// ─── API CONFIG ───────────────────────────────────────────────────────────────
 const BASE_URL = "http://localhost:8081";
 
-// ─── TOKEN HELPERS ────────────────────────────────────────────────────────────
-export const saveToken = (token)  => localStorage.setItem("token", token);
-export const getToken  = ()       => localStorage.getItem("token");
-export const saveUser  = (user)   => localStorage.setItem("user", JSON.stringify(user));
-export const getUser   = ()       => JSON.parse(localStorage.getItem("user") || "null");
-export const logout    = ()       => { localStorage.removeItem("token"); localStorage.removeItem("user"); };
+export const saveToken = (token) => localStorage.setItem("token", token);
+export const getToken  = ()      => localStorage.getItem("token");
+export const saveUser  = (user)  => localStorage.setItem("user", JSON.stringify(user));
+export const getUser   = ()      => JSON.parse(localStorage.getItem("user") || "null");
+export const logout    = ()      => { localStorage.removeItem("token"); localStorage.removeItem("user"); };
 
-// ─── BASE FETCH ───────────────────────────────────────────────────────────────
 const api = async (path, options = {}) => {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -26,9 +23,9 @@ const api = async (path, options = {}) => {
   return res.json();
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 // AUTH
-// ═════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
 
 export const login = async (email, password, role) => {
   const data = await api("/api/auth/login", {
@@ -36,23 +33,36 @@ export const login = async (email, password, role) => {
     body: JSON.stringify({ email, password, role }),
   });
   saveToken(data.token);
-  saveUser({ userId: data.userId, name: data.name, email: data.email, role: data.role, roll: data.roll, division: data.division, phone: data.phone });
+  saveUser(data);
   return data;
 };
 
-export const register = async (name, email, password, role, phone, roll, division) => {
+// register accepts a single object with all fields
+export const register = async (fields) => {
   const data = await api("/api/auth/register", {
     method: "POST",
-    body: JSON.stringify({ name, email, password, role, phone, roll, division }),
+    body: JSON.stringify({
+      name:       fields.name,
+      email:      fields.email,
+      password:   fields.password,
+      role:       fields.role,
+      phone:      fields.phone      || "",
+      roll:       fields.roll       || "",
+      division:   fields.division   || "",
+      batch:      fields.batch      || "",
+      department: fields.department || "",
+      year:       fields.year       || "",
+      semester:   fields.semester   || "",
+    }),
   });
   saveToken(data.token);
-  saveUser({ userId: data.userId, name: data.name, email: data.email, role: data.role, roll: data.roll, division: data.division, phone: data.phone });
+  saveUser(data);
   return data;
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-// MENTEE APIs
-// ═════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// MENTEE
+// ═══════════════════════════════════════════════════════════════════
 
 export const getMenteeProfile    = () => api("/api/mentee/profile");
 export const getMenteeDashboard  = () => api("/api/mentee/dashboard");
@@ -62,11 +72,14 @@ export const getMenteeCourses    = () => api("/api/mentee/courses");
 export const getMenteeCerts      = () => api("/api/mentee/certificates");
 export const getMenteeRemarks    = () => api("/api/mentee/remarks");
 
-export const addCourse = (courseData) =>
-  api("/api/mentee/courses", {
-    method: "POST",
-    body: JSON.stringify(courseData),
+export const updateMenteeProfile = (fields) =>
+  api("/api/mentee/profile", {
+    method: "PUT",
+    body: JSON.stringify(fields),
   });
+
+export const addCourse = (courseData) =>
+  api("/api/mentee/courses", { method: "POST", body: JSON.stringify(courseData) });
 
 export const uploadCertificate = async (formData) => {
   const token = getToken();
@@ -82,18 +95,18 @@ export const uploadCertificate = async (formData) => {
   return res.json();
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-// MENTOR APIs
-// ═════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// MENTOR
+// ═══════════════════════════════════════════════════════════════════
 
-export const getMentorDashboard       = () => api("/api/mentor/dashboard");
-export const getAllMentees            = () => api("/api/mentor/mentees");
+export const getMentorDashboard      = () => api("/api/mentor/dashboard");
+export const getAllMentees           = () => api("/api/mentor/mentees");
 
-export const getMenteeMarksById       = (id) => api(`/api/mentor/mentees/${id}/marks`);
-export const getMenteeAttendanceById  = (id) => api(`/api/mentor/mentees/${id}/attendance`);
-export const getMenteeCertsById       = (id) => api(`/api/mentor/mentees/${id}/certificates`);
-export const getMenteeCoursesById     = (id) => api(`/api/mentor/mentees/${id}/courses`);
-export const getMenteeRemarksById     = (id) => api(`/api/mentor/mentees/${id}/remarks`);
+export const getMenteeMarksById      = (id) => api(`/api/mentor/mentees/${id}/marks`);
+export const getMenteeAttendanceById = (id) => api(`/api/mentor/mentees/${id}/attendance`);
+export const getMenteeCertsById      = (id) => api(`/api/mentor/mentees/${id}/certificates`);
+export const getMenteeCoursesById    = (id) => api(`/api/mentor/mentees/${id}/courses`);
+export const getMenteeRemarksById    = (id) => api(`/api/mentor/mentees/${id}/remarks`);
 
 export const addRemark = (menteeId, message) =>
   api(`/api/mentor/mentees/${menteeId}/remarks`, {

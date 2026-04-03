@@ -35,9 +35,8 @@ public class DataStore {
                 .map(u -> {
                     Map<String, Object> m = userToMap(u);
                     int uid = u.getId();
-                    // Add counts and avg attendance for mentor dashboard
-                    m.put("cert_count",   certificateRepository.findByUserId(uid).size());
-                    m.put("course_count", courseRepository.findByUserId(uid).size());
+                    m.put("cert_count",    certificateRepository.findByUserId(uid).size());
+                    m.put("course_count",  courseRepository.findByUserId(uid).size());
                     double avg = attendanceRepository.findByUserId(uid).stream()
                             .mapToInt(Attendance::getPercentage).average().orElse(0);
                     m.put("avg_attendance", (int) Math.round(avg));
@@ -46,34 +45,25 @@ public class DataStore {
                 .collect(Collectors.toList());
     }
 
-    public List<Map<String, Object>> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::userToMap)
-                .collect(Collectors.toList());
-    }
-
     // ── MARKS ─────────────────────────────────────────────────────────────────
 
     public List<Map<String, Object>> getMarksByUserId(int userId) {
         return marksRepository.findByUserId(userId).stream()
-                .map(this::marksToMap)
-                .collect(Collectors.toList());
+                .map(this::marksToMap).collect(Collectors.toList());
     }
 
     // ── ATTENDANCE ────────────────────────────────────────────────────────────
 
     public List<Map<String, Object>> getAttByUserId(int userId) {
         return attendanceRepository.findByUserId(userId).stream()
-                .map(this::attToMap)
-                .collect(Collectors.toList());
+                .map(this::attToMap).collect(Collectors.toList());
     }
 
     // ── COURSES ───────────────────────────────────────────────────────────────
 
     public List<Map<String, Object>> getCoursesByUserId(int userId) {
         return courseRepository.findByUserId(userId).stream()
-                .map(this::courseToMap)
-                .collect(Collectors.toList());
+                .map(this::courseToMap).collect(Collectors.toList());
     }
 
     public Map<String, Object> addCourse(int userId, String courseName,
@@ -86,8 +76,7 @@ public class DataStore {
 
     public List<Map<String, Object>> getCertsByUserId(int userId) {
         return certificateRepository.findByUserId(userId).stream()
-                .map(this::certToMap)
-                .collect(Collectors.toList());
+                .map(this::certToMap).collect(Collectors.toList());
     }
 
     public Map<String, Object> addCert(int userId, String title, String provider,
@@ -104,8 +93,7 @@ public class DataStore {
 
     public List<Map<String, Object>> getRemarksByMenteeId(int menteeId) {
         return remarkRepository.findByMenteeId(menteeId).stream()
-                .map(this::remarkToMap)
-                .collect(Collectors.toList());
+                .map(this::remarkToMap).collect(Collectors.toList());
     }
 
     public Map<String, Object> addRemark(int mentorId, int menteeId,
@@ -118,18 +106,26 @@ public class DataStore {
 
     // ── CONVERTERS ────────────────────────────────────────────────────────────
 
-    private Map<String, Object> userToMap(User u) {
+    public Map<String, Object> userToMap(User u) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id",       u.getId());
-        m.put("name",     u.getName());
-        m.put("email",    u.getEmail());
-        m.put("password", u.getPassword());
-        m.put("role",     u.getRole());
-        m.put("phone",    u.getPhone()    != null ? u.getPhone()    : "");
-        m.put("roll",     u.getRoll()     != null ? u.getRoll()     : "");
-        m.put("division", u.getDivision() != null ? u.getDivision() : "");
+        m.put("id",           u.getId());
+        m.put("name",         u.getName());
+        m.put("email",        u.getEmail());
+        m.put("password",     u.getPassword());
+        m.put("role",         u.getRole());
+        m.put("phone",        s(u.getPhone()));
+        m.put("roll",         s(u.getRoll()));
+        m.put("division",     s(u.getDivision()));
+        m.put("batch",        s(u.getBatch()));
+        m.put("department",   s(u.getDepartment()));
+        m.put("year",         u.getYear()     != null ? u.getYear()     : 0);
+        m.put("semester",     u.getSemester() != null ? u.getSemester() : 0);
+        m.put("parent1Phone", s(u.getParent1Phone()));
+        m.put("parent2Phone", s(u.getParent2Phone()));
         return m;
     }
+
+    private String s(String v) { return v != null ? v : ""; }
 
     private Map<String, Object> marksToMap(Marks x) {
         Map<String, Object> m = new LinkedHashMap<>();

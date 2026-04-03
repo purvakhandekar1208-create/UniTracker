@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -30,25 +31,13 @@ public class AuthController {
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null)
             return ResponseEntity.status(401).body(Map.of("error", "No account found with this email"));
-
         if (!user.getPassword().equals(password))
             return ResponseEntity.status(401).body(Map.of("error", "Incorrect password"));
-
         if (!user.getRole().equalsIgnoreCase(role))
             return ResponseEntity.status(401).body(Map.of("error", "You are registered as: " + user.getRole()));
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole(), user.getId(), user.getName());
-
-        return ResponseEntity.ok(Map.of(
-            "token",    token,
-            "userId",   user.getId(),
-            "name",     user.getName(),
-            "email",    user.getEmail(),
-            "role",     user.getRole(),
-            "phone",    user.getPhone()    != null ? user.getPhone()    : "",
-            "roll",     user.getRoll()     != null ? user.getRoll()     : "",
-            "division", user.getDivision() != null ? user.getDivision() : ""
-        ));
+        return ResponseEntity.ok(buildResponse(user, token));
     }
 
     // ── REGISTER ──────────────────────────────────────────────────────────────
@@ -58,11 +47,7 @@ public class AuthController {
         String password = body.get("password");
         String name     = body.get("name");
         String role     = body.get("role");
-        String phone    = body.get("phone");
-        String roll     = body.get("roll");
-        String division = body.get("division");
 
-        // Validate required fields
         if (email == null || email.isBlank())
             return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
         if (password == null || password.length() < 6)
@@ -71,34 +56,53 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Full name is required"));
         if (role == null || (!role.equals("mentor") && !role.equals("mentee")))
             return ResponseEntity.badRequest().body(Map.of("error", "Role must be mentor or mentee"));
-
-        // Check duplicate email
         if (userRepository.findByEmail(email).isPresent())
             return ResponseEntity.status(409).body(Map.of("error", "An account with this email already exists"));
 
-        // Save new user
         User user = new User();
         user.setEmail(email);
         user.setPassword(password);
         user.setName(name);
         user.setRole(role);
-        user.setPhone(phone);
-        user.setRoll(roll);
-        user.setDivision(division);
+        user.setPhone(body.get("phone"));
+        user.setRoll(body.get("roll"));
+        user.setDivision(body.get("division"));
+        user.setBatch(body.get("batch"));
+        user.setDepartment(body.get("department"));
+
+        String yearStr = body.get("year");
+        String semStr  = body.get("semester");
+        if (yearStr != null && !yearStr.isBlank()) {
+            try { user.setYear(Integer.parseInt(yearStr)); } catch (NumberFormatException ignored) {}
+        }
+        if (semStr != null && !semStr.isBlank()) {
+            try { user.setSemester(Integer.parseInt(semStr)); } catch (NumberFormatException ignored) {}
+        }
 
         User saved = userRepository.save(user);
-
         String token = jwtUtil.generateToken(saved.getEmail(), saved.getRole(), saved.getId(), saved.getName());
-
-        return ResponseEntity.ok(Map.of(
-            "token",    token,
-            "userId",   saved.getId(),
-            "name",     saved.getName(),
-            "email",    saved.getEmail(),
-            "role",     saved.getRole(),
-            "phone",    saved.getPhone()    != null ? saved.getPhone()    : "",
-            "roll",     saved.getRoll()     != null ? saved.getRoll()     : "",
-            "division", saved.getDivision() != null ? saved.getDivision() : ""
-        ));
+        return ResponseEntity.ok(buildResponse(saved, token));
     }
+
+    // ── HELPER — builds response map (no Map.of() 10-entry limit) ────────────
+    private Map<String, Object> buildResponse(User u, String token) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("token",        token);
+        m.put("userId",       u.getId());
+        m.put("name",         u.getName());
+        m.put("email",        u.getEmail());
+        m.put("role",         u.getRole());
+        m.put("phone",        safe(u.getPhone()));
+        m.put("roll",         safe(u.getRoll()));
+        m.put("division",     safe(u.getDivision()));
+        m.put("batch",        safe(u.getBatch()));
+        m.put("department",   safe(u.getDepartment()));
+        m.put("year",         u.getYear()     != null ? u.getYear()     : 0);
+        m.put("semester",     u.getSemester() != null ? u.getSemester() : 0);
+        m.put("parent1Phone", safe(u.getParent1Phone()));
+        m.put("parent2Phone", safe(u.getParent2Phone()));
+        return m;
+    }
+
+    private String safe(String s) { return s != null ? s : ""; }
 }
