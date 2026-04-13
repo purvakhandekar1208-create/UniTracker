@@ -174,7 +174,6 @@ export default function MenteeDetail({ mentee, onBack }) {
         <>
           {activeTab === "marks"        && <Marks        readOnly data={marksData}   />}
           {activeTab === "certificates" && <Certificates readOnly data={certsData}   />}
-          {activeTab === "courses"      && <Courses      readOnly data={coursesData} />}
           {activeTab === "attendance"   && <Attendance   readOnly data={attData}     />}
           {activeTab === "remarks"      && <RemarksTab   mentee={mentee}             />}
           {activeTab === "profile"      && <ProfileTab   mentee={mentee}             />}
@@ -183,3 +182,5 @@ export default function MenteeDetail({ mentee, onBack }) {
     </div>
   );
 }
+
+

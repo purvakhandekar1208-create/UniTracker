@@ -119,3 +119,4 @@ export const updateMenteeAttendance = (menteeId, percentage) =>
     method: "PUT",
     body: JSON.stringify({ percentage }),
   });
+

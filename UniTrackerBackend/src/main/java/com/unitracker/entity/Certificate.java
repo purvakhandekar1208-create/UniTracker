@@ -13,3 +13,4 @@ public class Certificate {
     @Column(name = "issue_date") private String issueDate;
     @Column(name = "file_path")  private String filePath;
 }
+

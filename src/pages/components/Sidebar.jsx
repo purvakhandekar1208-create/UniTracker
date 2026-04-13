@@ -81,7 +81,6 @@ const MENTOR_NAV = [
   { id: "dashboard", label: "Dashboard",  Icon: Icons.Home     },
   { id: "mentees",   label: "Mentees",    Icon: Icons.Users    },
   { id: "batches",   label: "My Batches", Icon: Icons.Calendar },
-  { id: "resources", label: "Resources",  Icon: Icons.Folder   },
   { id: "remarks",   label: "Remarks",    Icon: Icons.Chat     },
   { id: "profile",   label: "Profile",    Icon: Icons.User     },
 ];
