@@ -22,7 +22,7 @@ import MyBatches       from "./pages/mentor/MyBatches";
 import MenteeDetail    from "./pages/mentor/MenteeDetail";
 import MentorProfile   from "./pages/mentor/MentorProfile";
 
-import { getAllMentees, addRemark, getMenteeRemarksById, getUser } from "./api/api";
+import { getAllMentees, addRemark, getMenteeRemarksById, getUser, getMentorBatches, joinMentorBatch, leaveMentorBatch } from "./api/api";
 import { Avatar } from "./assets/Icons";
 
 
@@ -33,7 +33,7 @@ function Academics() {
   return (
     <div className="page">
       <div className="page-heading">Academics</div>
-      <div className="page-sub">Your marks and attendance</div>
+      <div className="page-sub">Your GPA and attendance</div>
 
       <div className="tabs-bar">
         {["marks", "attendance"].map((t) => (
@@ -42,13 +42,13 @@ function Academics() {
             className={`tab-item ${tab === t ? "active" : ""}`}
             onClick={() => setTab(t)}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === "marks" ? "CGPA / SGPA" : "Attendance"}
           </div>
         ))}
       </div>
 
-      {tab === "marks"      && <Marks      readOnly />}
-      {tab === "attendance" && <Attendance readOnly />}
+      {tab === "marks"      && <Marks />}
+      {tab === "attendance" && <Attendance />}
     </div>
   );
 }
@@ -207,22 +207,49 @@ export default function App() {
   const [user,           setUser]           = useState(null);
   const [activePage,     setActivePage]     = useState("dashboard");
   const [selectedMentee, setSelectedMentee] = useState(null);
-
-  // Mentor batches — persisted to localStorage
-  const [myBatches, setMyBatches] = useState(() => {
-    const saved = localStorage.getItem("mentor_batches");
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("mentor_batches", JSON.stringify(myBatches));
-  }, [myBatches]);
+  const [myBatches,      setMyBatches]      = useState([]);
 
   // Restore session on mount
   useEffect(() => {
     const saved = getUser();
     if (saved?.token || saved?.userId) setUser(saved);
   }, []);
+
+  // When a mentor logs in, load their batches from DB
+  useEffect(() => {
+    if (user?.role === "mentor") {
+      getMentorBatches()
+        .then(rows => {
+          // Reconstruct the shape MyBatches expects: { id, label, div, full }
+          setMyBatches(rows.map(r => ({
+            id:    r.batch,
+            batch: r.batch,
+            div:   r.division || r.batch.replace(/[0-9]/g, ""),
+            label: r.batch,
+            full:  `Division ${r.division || r.batch.replace(/[0-9]/g, "")} — Batch ${r.batch.replace(/[A-Z]/gi, "")}`
+          })));
+        })
+        .catch(console.error);
+    } else {
+      setMyBatches([]);
+    }
+  }, [user]);
+
+  // Persist join to DB
+  const handleJoinBatch = async (batch) => {
+    try {
+      await joinMentorBatch(batch.id, batch.div);
+      setMyBatches(prev => prev.find(b => b.id === batch.id) ? prev : [...prev, batch]);
+    } catch (e) { console.error("Failed to join batch:", e); }
+  };
+
+  // Persist leave to DB
+  const handleLeaveBatch = async (batchId) => {
+    try {
+      await leaveMentorBatch(batchId);
+      setMyBatches(prev => prev.filter(b => b.id !== batchId));
+    } catch (e) { console.error("Failed to leave batch:", e); }
+  };
 
   const getTitle = () => {
     if (!user) return "";
@@ -276,6 +303,8 @@ export default function App() {
               onNavigate={navigate}
               myBatches={myBatches}
               setMyBatches={setMyBatches}
+              onJoinBatch={handleJoinBatch}
+              onLeaveBatch={handleLeaveBatch}
             />
           );
         case "remarks":

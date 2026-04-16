@@ -1,18 +1,13 @@
 import { useState, useEffect } from "react";
 import { Avatar } from "../../assets/Icons";
-import { getAllMentees, updateMenteeAttendance } from "../../api/api";
+import { getAllMentees } from "../../api/api";
 
 export default function MenteesList({ onViewMentee, myBatches = [] }) {
 
-  const [mentees, setMentees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [mentees,  setMentees]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [search,   setSearch]   = useState("");
   const [divFilter, setDivFilter] = useState("All");
-
-  // { [menteeId]: number | "" }  — live typed values
-  const [attEdits, setAttEdits] = useState({});
-  // { [menteeId]: "saving" | "saved" | "error" }
-  const [attStatus, setAttStatus] = useState({});
 
   useEffect(() => {
     getAllMentees()
@@ -40,57 +35,6 @@ export default function MenteesList({ onViewMentee, myBatches = [] }) {
       menteesForMentor.map(m => m.division ?? m.div).filter(Boolean)
     )
   ];
-
-  // Edited value takes priority over the fetched avg_attendance
-  const getAtt = (m) =>
-    attEdits[m.id] !== undefined ? attEdits[m.id] : (m.avg_attendance ?? 0);
-
-  const handleAttChange = (e, menteeId) => {
-    const raw = e.target.value;
-    if (raw === "") {
-      setAttEdits(prev => ({ ...prev, [menteeId]: "" }));
-      return;
-    }
-    const num = Math.min(100, Math.max(0, Number(raw)));
-    if (isNaN(num)) return;
-    setAttEdits(prev => ({ ...prev, [menteeId]: num }));
-  };
-
-  // On blur: if empty → reset; otherwise POST to backend and update state
-  const handleAttBlur = async (menteeId) => {
-    let val = attEdits[menteeId];
-
-    if (val === "" || val === undefined) {
-      const stored = mentees.find(m => m.id === menteeId)?.avg_attendance ?? 0;
-      setAttEdits(prev => ({ ...prev, [menteeId]: stored }));
-      return;
-    }
-
-    val = Number(val);
-    setAttStatus(prev => ({ ...prev, [menteeId]: "saving" }));
-
-    try {
-      await updateMenteeAttendance(menteeId, val);
-
-      // Patch avg_attendance so dashboard / Needs Attention picks up the change
-      setMentees(prev =>
-        prev.map(m => m.id === menteeId ? { ...m, avg_attendance: val } : m)
-      );
-
-      setAttStatus(prev => ({ ...prev, [menteeId]: "saved" }));
-      setTimeout(() => {
-        setAttStatus(prev => {
-          const next = { ...prev };
-          delete next[menteeId];
-          return next;
-        });
-      }, 2000);
-
-    } catch (err) {
-      console.error("Failed to save attendance:", err);
-      setAttStatus(prev => ({ ...prev, [menteeId]: "error" }));
-    }
-  };
 
   if (loading) {
     return (
@@ -180,6 +124,8 @@ export default function MenteesList({ onViewMentee, myBatches = [] }) {
                     <th>Division</th>
                     <th>Batch</th>
                     <th>Phone</th>
+                    <th>Parent 1 Phone</th>
+                    <th>Parent 1 Email</th>
                     <th>Attendance</th>
                     <th>Certificates</th>
                   </tr>
@@ -187,16 +133,15 @@ export default function MenteesList({ onViewMentee, myBatches = [] }) {
 
                 <tbody>
                   {filtered.map(m => {
-                    const att    = getAtt(m);
-                    const attNum = att === "" ? 0 : Number(att);
-                    const isLow  = attNum < 75;
-                    const status = attStatus[m.id];
+                    const att    = m.avg_attendance ?? 0;
+                    const isLow  = att < 75;
 
                     return (
                       <tr
                         key={m.id}
                         className="tr-click"
-                        onClick={() => onViewMentee({ ...m, avg_attendance: attNum })}
+                        onClick={() => onViewMentee(m)}
+                        style={{ cursor: "pointer" }}
                       >
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -229,56 +174,31 @@ export default function MenteesList({ onViewMentee, myBatches = [] }) {
                         </td>
 
                         <td style={{ color: "var(--muted)", fontSize: 13 }}>
-                          {m.phone ?? "—"}
+                          {m.phone || "—"}
                         </td>
 
-                        {/* ── Editable Attendance Cell ── */}
-                        <td onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={att}
-                              onChange={(e) => handleAttChange(e, m.id)}
-                              onBlur={() => handleAttBlur(m.id)}
-                              disabled={status === "saving"}
-                              style={{
-                                width: 54,
-                                padding: "3px 6px",
-                                borderRadius: 5,
-                                border: `1.5px solid ${isLow ? "var(--red-mid, #ef4444)" : "var(--border)"}`,
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: isLow ? "var(--red-mid, #ef4444)" : "#15803d",
-                                textAlign: "center",
-                                outline: "none",
-                                background: isLow
-                                  ? "rgba(239,68,68,0.06)"
-                                  : "rgba(21,128,61,0.06)",
-                                MozAppearance: "textfield",
-                                opacity: status === "saving" ? 0.6 : 1,
-                              }}
-                            />
-                            <span style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: isLow ? "var(--red-mid, #ef4444)" : "#15803d"
-                            }}>
-                              %
-                            </span>
+                        <td style={{ color: "var(--muted)", fontSize: 13 }}>
+                          {m.parent1Phone || m.parent1_phone || "—"}
+                        </td>
 
-                            {/* Inline save status indicator */}
-                            {status === "saving" && (
-                              <span style={{ fontSize: 10, color: "var(--muted)" }}>···</span>
-                            )}
-                            {status === "saved" && (
-                              <span style={{ fontSize: 11, color: "#15803d" }} title="Saved">✓</span>
-                            )}
-                            {status === "error" && (
-                              <span style={{ fontSize: 11, color: "var(--red-mid, #ef4444)" }} title="Save failed — try again">✕</span>
-                            )}
-                          </div>
+                        <td style={{ color: "var(--muted)", fontSize: 13 }}>
+                          {m.parent1Email || m.parent1_email || "—"}
+                        </td>
+
+                        {/* Attendance % badge */}
+                        <td>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: 12,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            background: isLow ? "rgba(239,68,68,0.1)" : "rgba(21,128,61,0.08)",
+                            color: isLow ? "var(--red-mid, #ef4444)" : "#15803d",
+                            border: `1.5px solid ${isLow ? "var(--red-mid, #ef4444)" : "#86efac"}`
+                          }}>
+                            {att}%
+                          </span>
                         </td>
 
                         <td>{m.cert_count ?? "—"}</td>

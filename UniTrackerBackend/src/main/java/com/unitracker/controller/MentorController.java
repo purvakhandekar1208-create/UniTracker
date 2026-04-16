@@ -1,7 +1,10 @@
 package com.unitracker.controller;
 
+import com.unitracker.entity.MentorBatch;
+import com.unitracker.repository.MentorBatchRepository;
 import com.unitracker.service.DataStore;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +16,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class MentorController {
 
-    private final DataStore dataStore;
+    private final DataStore              dataStore;
+    private final MentorBatchRepository  mentorBatchRepository;
 
     private int uid(HttpServletRequest r) { return (int) r.getAttribute("userId"); }
 
@@ -37,6 +41,64 @@ public class MentorController {
     @GetMapping("/mentees")
     public ResponseEntity<List<Map<String, Object>>> allMentees(HttpServletRequest r) {
         return ResponseEntity.ok(dataStore.getAllMentees());
+    }
+
+    // ── BATCH MANAGEMENT ──────────────────────────────────────────────────────
+
+    /** GET /api/mentor/batches — list all batches this mentor has joined */
+    @GetMapping("/batches")
+    public ResponseEntity<List<Map<String, Object>>> getBatches(HttpServletRequest r) {
+        int mentorId = uid(r);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (MentorBatch mb : mentorBatchRepository.findByMentorId(mentorId)) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id",       mb.getBatch());          // use batch string as id (matches frontend)
+            m.put("batch",    mb.getBatch());
+            m.put("division", mb.getDivision());
+            m.put("label",    mb.getBatch());
+            m.put("div",      mb.getDivision());
+            result.add(m);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /** POST /api/mentor/batches — join a batch; body: { "batch": "A1", "division": "A" } */
+    @PostMapping("/batches")
+    public ResponseEntity<Map<String, Object>> joinBatch(
+            HttpServletRequest r,
+            @RequestBody Map<String, String> body) {
+
+        int    mentorId = uid(r);
+        String batch    = body.get("batch");
+        String division = body.getOrDefault("division", "");
+
+        if (batch == null || batch.isBlank())
+            return ResponseEntity.badRequest().body(Map.of("error", "batch required"));
+
+        // Upsert: if already joined, just return it
+        MentorBatch mb = mentorBatchRepository
+                .findByMentorIdAndBatch(mentorId, batch)
+                .orElseGet(() -> mentorBatchRepository.save(
+                        new MentorBatch(0, mentorId, batch, division)));
+
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("id",       mb.getBatch());
+        resp.put("batch",    mb.getBatch());
+        resp.put("division", mb.getDivision());
+        resp.put("label",    mb.getBatch());
+        resp.put("div",      mb.getDivision());
+        return ResponseEntity.ok(resp);
+    }
+
+    /** DELETE /api/mentor/batches/{batch} — leave a batch */
+    @DeleteMapping("/batches/{batch}")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> leaveBatch(
+            HttpServletRequest r,
+            @PathVariable String batch) {
+
+        mentorBatchRepository.deleteByMentorIdAndBatch(uid(r), batch);
+        return ResponseEntity.ok(Map.of("removed", batch));
     }
 
     // ── MENTEE SUB-RESOURCES ──────────────────────────────────────────────────
@@ -74,7 +136,38 @@ public class MentorController {
         return ResponseEntity.ok(dataStore.addRemark(uid(r), id, message, date));
     }
 
-    // ── NEW: Mentor manually sets a mentee's attendance percentage ────────────
+    // ── MENTEE GPA (READ ONLY) ────────────────────────────────────────────────
+    @GetMapping("/mentees/{id}/gpa")
+    public ResponseEntity<List<Map<String, Object>>> getMenteeGpa(@PathVariable int id) {
+        return ResponseEntity.ok(dataStore.getSgpaByUserId(id));
+    }
+
+    // ── ATTENDANCE: MENTOR ADDS/UPDATES A SPECIFIC MONTH ─────────────────────
+    @PostMapping("/mentees/{id}/attendance")
+    public ResponseEntity<Map<String, Object>> addMonthAttendance(
+            @PathVariable int id,
+            @RequestBody Map<String, Object> body) {
+
+        String month    = (String) body.get("month");
+        Object rawPct   = body.get("percentage");
+
+        if (month == null || month.isBlank())
+            return ResponseEntity.badRequest().body(Map.of("error", "month required"));
+        if (rawPct == null)
+            return ResponseEntity.badRequest().body(Map.of("error", "percentage required"));
+
+        int percentage;
+        try { percentage = ((Number) rawPct).intValue(); }
+        catch (ClassCastException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "percentage must be a number"));
+        }
+        if (percentage < 0 || percentage > 100)
+            return ResponseEntity.badRequest().body(Map.of("error", "percentage must be 0–100"));
+
+        return ResponseEntity.ok(dataStore.upsertMonthlyAttendance(id, month, percentage));
+    }
+
+    // ── LEGACY PUT OVERRIDE ───────────────────────────────────────────────────
     @PutMapping("/mentees/{id}/attendance")
     public ResponseEntity<Map<String, Object>> updateAttendance(
             @PathVariable int id,
@@ -85,14 +178,12 @@ public class MentorController {
             return ResponseEntity.badRequest().body(Map.of("error", "percentage required"));
 
         int percentage;
-        try {
-            percentage = ((Number) raw).intValue();
-        } catch (ClassCastException e) {
+        try { percentage = ((Number) raw).intValue(); }
+        catch (ClassCastException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "percentage must be a number"));
         }
-
         if (percentage < 0 || percentage > 100)
-            return ResponseEntity.badRequest().body(Map.of("error", "percentage must be between 0 and 100"));
+            return ResponseEntity.badRequest().body(Map.of("error", "percentage must be 0–100"));
 
         dataStore.upsertAttendanceOverride(id, percentage);
 

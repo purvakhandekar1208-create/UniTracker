@@ -5,6 +5,7 @@ import com.unitracker.repository.UserRepository;
 import com.unitracker.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -16,7 +17,10 @@ import java.util.Map;
 public class AuthController {
 
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
+    private final JwtUtil        jwtUtil;
+
+    // single shared encoder instance (BCrypt is thread-safe)
+    private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder();
 
     // ── LOGIN ─────────────────────────────────────────────────────────────────
     @PostMapping("/login")
@@ -31,10 +35,21 @@ public class AuthController {
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null)
             return ResponseEntity.status(401).body(Map.of("error", "No account found with this email"));
-        if (!user.getPassword().equals(password))
+
+        // Support both BCrypt-hashed and legacy plain-text passwords gracefully
+        boolean matches = ENCODER.matches(password, user.getPassword())
+                       || user.getPassword().equals(password);
+        if (!matches)
             return ResponseEntity.status(401).body(Map.of("error", "Incorrect password"));
+
         if (!user.getRole().equalsIgnoreCase(role))
             return ResponseEntity.status(401).body(Map.of("error", "You are registered as: " + user.getRole()));
+
+        // Upgrade plain-text password to BCrypt hash on successful login
+        if (!user.getPassword().startsWith("$2")) {
+            user.setPassword(ENCODER.encode(password));
+            userRepository.save(user);
+        }
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole(), user.getId(), user.getName());
         return ResponseEntity.ok(buildResponse(user, token));
@@ -61,7 +76,7 @@ public class AuthController {
 
         User user = new User();
         user.setEmail(email);
-        user.setPassword(password);
+        user.setPassword(ENCODER.encode(password));   // ← hash on register
         user.setName(name);
         user.setRole(role);
         user.setPhone(body.get("phone"));
@@ -84,7 +99,7 @@ public class AuthController {
         return ResponseEntity.ok(buildResponse(saved, token));
     }
 
-    // ── HELPER — builds response map (no Map.of() 10-entry limit) ────────────
+    // ── HELPER ────────────────────────────────────────────────────────────────
     private Map<String, Object> buildResponse(User u, String token) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("token",        token);

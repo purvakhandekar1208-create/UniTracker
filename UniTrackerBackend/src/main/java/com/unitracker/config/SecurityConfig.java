@@ -29,8 +29,8 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/api/auth/**", "/api/files/**").permitAll()
-                .requestMatchers("/api/mentor/**").hasAnyAuthority("ROLE_MENTOR", "ROLE_mentor")
-                .requestMatchers("/api/mentee/**").hasAnyAuthority("ROLE_MENTEE", "ROLE_mentee")
+                .requestMatchers("/api/mentor/**").hasRole("MENTOR")
+                .requestMatchers("/api/mentee/**").hasRole("MENTEE")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -41,7 +41,7 @@ public class SecurityConfig {
     public CorsConfigurationSource cors() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(Arrays.asList(origins.split(",")));
-        c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
         c.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();

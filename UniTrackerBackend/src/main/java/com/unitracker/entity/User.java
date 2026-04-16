@@ -29,4 +29,6 @@ public class User {
     // Parent contacts
     @Column(name = "parent1_phone") private String parent1Phone;
     @Column(name = "parent2_phone") private String parent2Phone;
+    @Column(name = "parent1_email") private String parent1Email;
+    @Column(name = "parent2_email") private String parent2Email;
 }

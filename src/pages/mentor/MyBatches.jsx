@@ -221,26 +221,31 @@ const css = `
   }
 `;
 
-export default function MyBatches({ myBatches = [], setMyBatches, onNavigate }) {
+export default function MyBatches({ myBatches = [], setMyBatches, onNavigate, onJoinBatch, onLeaveBatch }) {
 
   const [divFilter, setDivFilter] = useState("All");
 
   const joinedIds = useMemo(() => new Set(myBatches.map(b => b.id)), [myBatches]);
 
   const joinBatch = (batch) => {
-
-    if (!joinedIds.has(batch.id)) {
+    if (onJoinBatch) {
+      onJoinBatch(batch);          // DB-backed: persists to mentor_batches table
+    } else if (!joinedIds.has(batch.id)) {
       setMyBatches(prev => [...prev, batch]);
     }
 
-    // ⭐ navigate to mentees page and filter by batch
+    // navigate to mentees page filtered by batch
     if (onNavigate) {
       onNavigate("mentees", batch.id);
     }
   };
 
   const leaveBatch = (batchId) => {
-    setMyBatches(prev => prev.filter(b => b.id !== batchId));
+    if (onLeaveBatch) {
+      onLeaveBatch(batchId);       // DB-backed: removes from mentor_batches table
+    } else {
+      setMyBatches(prev => prev.filter(b => b.id !== batchId));
+    }
   };
 
   const visibleGroups = DIVISIONS

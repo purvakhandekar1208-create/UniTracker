@@ -70,6 +70,14 @@ export const getMenteeAttendance = () => api("/api/mentee/attendance");
 export const getMenteeCerts      = () => api("/api/mentee/certificates");
 export const getMenteeRemarks    = () => api("/api/mentee/remarks");
 
+// GPA — semester-wise SGPA/CGPA stored in DB
+export const getMenteeGpa = () => api("/api/mentee/gpa");
+export const saveMenteeGpa = (semester, sgpa, cgpa) =>
+  api("/api/mentee/gpa", {
+    method: "POST",
+    body: JSON.stringify({ semester, sgpa, cgpa }),
+  });
+
 export const updateMenteeProfile = (fields) =>
   api("/api/mentee/profile", {
     method: "PUT",
@@ -101,6 +109,7 @@ export const getMenteeMarksById      = (id) => api(`/api/mentor/mentees/${id}/ma
 export const getMenteeAttendanceById = (id) => api(`/api/mentor/mentees/${id}/attendance`);
 export const getMenteeCertsById      = (id) => api(`/api/mentor/mentees/${id}/certificates`);
 export const getMenteeRemarksById    = (id) => api(`/api/mentor/mentees/${id}/remarks`);
+export const getMenteeGpaById        = (id) => api(`/api/mentor/mentees/${id}/gpa`);
 
 export const addRemark = (menteeId, message) =>
   api(`/api/mentor/mentees/${menteeId}/remarks`, {
@@ -108,10 +117,26 @@ export const addRemark = (menteeId, message) =>
     body: JSON.stringify({ message }),
   });
 
-// ── NEW: Mentor updates a mentee's overall attendance percentage ──
+// Mentor adds/updates a specific month's attendance record
+export const addMenteeAttendanceRecord = (menteeId, month, percentage) =>
+  api(`/api/mentor/mentees/${menteeId}/attendance`, {
+    method: "POST",
+    body: JSON.stringify({ month, percentage }),
+  });
+
+// Legacy overall override (PUT)
 export const updateMenteeAttendance = (menteeId, percentage) =>
   api(`/api/mentor/mentees/${menteeId}/attendance`, {
     method: "PUT",
     body: JSON.stringify({ percentage }),
   });
 
+// ── Mentor batch management (persists to DB) ──────────────────────────────────
+export const getMentorBatches  = ()              => api("/api/mentor/batches");
+export const joinMentorBatch   = (batch, div)    => api("/api/mentor/batches", {
+  method: "POST",
+  body: JSON.stringify({ batch, division: div }),
+});
+export const leaveMentorBatch  = (batchId)       => api(`/api/mentor/batches/${batchId}`, {
+  method: "DELETE",
+});

@@ -1,6 +1,7 @@
 package com.unitracker.controller;
 
 import com.unitracker.entity.User;
+import com.unitracker.repository.MentorBatchRepository;
 import com.unitracker.repository.UserRepository;
 import com.unitracker.service.DataStore;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,8 +21,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class MenteeController {
 
-    private final DataStore        dataStore;
-    private final UserRepository   userRepository;
+    private final DataStore             dataStore;
+    private final UserRepository        userRepository;
+    private final MentorBatchRepository mentorBatchRepository;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -46,16 +48,17 @@ public class MenteeController {
         User user = userRepository.findById(uid(r)).orElse(null);
         if (user == null) return ResponseEntity.notFound().build();
 
-        // Allow updating contact and academic info (not email/password/role here)
         if (body.containsKey("phone"))        user.setPhone(body.get("phone"));
         if (body.containsKey("parent1Phone")) user.setParent1Phone(body.get("parent1Phone"));
         if (body.containsKey("parent2Phone")) user.setParent2Phone(body.get("parent2Phone"));
+        if (body.containsKey("parent1Email")) user.setParent1Email(body.get("parent1Email"));
+        if (body.containsKey("parent2Email")) user.setParent2Email(body.get("parent2Email"));
         if (body.containsKey("roll"))         user.setRoll(body.get("roll"));
         if (body.containsKey("division"))     user.setDivision(body.get("division"));
         if (body.containsKey("batch"))        user.setBatch(body.get("batch"));
         if (body.containsKey("department"))   user.setDepartment(body.get("department"));
-        if (body.containsKey("year"))         { try { user.setYear(Integer.parseInt(body.get("year"))); } catch (Exception ignored) {} }
-        if (body.containsKey("semester"))     { try { user.setSemester(Integer.parseInt(body.get("semester"))); } catch (Exception ignored) {} }
+        if (body.containsKey("year"))     { try { user.setYear(Integer.parseInt(body.get("year")));     } catch (Exception ignored) {} }
+        if (body.containsKey("semester")) { try { user.setSemester(Integer.parseInt(body.get("semester"))); } catch (Exception ignored) {} }
 
         User saved = userRepository.save(user);
         Map<String, Object> resp = new LinkedHashMap<>();
@@ -72,6 +75,8 @@ public class MenteeController {
         resp.put("semester",     saved.getSemester() != null ? saved.getSemester() : 0);
         resp.put("parent1Phone", safe(saved.getParent1Phone()));
         resp.put("parent2Phone", safe(saved.getParent2Phone()));
+        resp.put("parent1Email", safe(saved.getParent1Email()));
+        resp.put("parent2Email", safe(saved.getParent2Email()));
         return ResponseEntity.ok(resp);
     }
 
@@ -94,7 +99,6 @@ public class MenteeController {
         resp.put("remarks",           dataStore.getRemarksByMenteeId(id));
         resp.put("certificates",      dataStore.getCertsByUserId(id));
 
-        // Academic info for dashboard banner
         if (user != null) {
             resp.put("department",   safe(user.getDepartment()));
             resp.put("batch",        safe(user.getBatch()));
@@ -105,6 +109,27 @@ public class MenteeController {
             resp.put("phone",        safe(user.getPhone()));
             resp.put("parent1Phone", safe(user.getParent1Phone()));
             resp.put("parent2Phone", safe(user.getParent2Phone()));
+
+            // Latest CGPA from sgpa_records
+            Double cgpa = dataStore.getLatestCgpa(id);
+            resp.put("cgpa", cgpa);
+
+            // ── Assigned Mentor via mentor_batches table ──────────────────────
+            // Look up which mentor is assigned to the mentee's batch in the DB.
+            String menteeBatch = user.getBatch();
+            if (menteeBatch != null && !menteeBatch.isBlank()) {
+                mentorBatchRepository.findByBatch(menteeBatch)
+                    .stream()
+                    .findFirst()
+                    .flatMap(mb -> userRepository.findById(mb.getMentorId()))
+                    .ifPresent(mentor -> {
+                        Map<String, Object> mentorInfo = new LinkedHashMap<>();
+                        mentorInfo.put("id",    mentor.getId());
+                        mentorInfo.put("name",  safe(mentor.getName()));
+                        mentorInfo.put("email", safe(mentor.getEmail()));
+                        resp.put("mentor", mentorInfo);
+                    });
+            }
         }
 
         return ResponseEntity.ok(resp);
@@ -115,14 +140,39 @@ public class MenteeController {
     public ResponseEntity<List<Map<String, Object>>> marks(HttpServletRequest r) {
         return ResponseEntity.ok(dataStore.getMarksByUserId(uid(r)));
     }
-    
+
+    // ── GPA ───────────────────────────────────────────────────────────────────
+    @GetMapping("/gpa")
+    public ResponseEntity<List<Map<String, Object>>> getGpa(HttpServletRequest r) {
+        return ResponseEntity.ok(dataStore.getSgpaByUserId(uid(r)));
+    }
+
+    @PostMapping("/gpa")
+    public ResponseEntity<?> saveGpa(
+            HttpServletRequest r,
+            @RequestBody Map<String, Object> body) {
+
+        Object rawSem = body.get("semester");
+        if (rawSem == null)
+            return ResponseEntity.badRequest().body(Map.of("error", "semester required"));
+
+        int semester;
+        try { semester = ((Number) rawSem).intValue(); }
+        catch (ClassCastException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "semester must be a number"));
+        }
+
+        Double sgpa = body.get("sgpa") != null ? ((Number) body.get("sgpa")).doubleValue() : null;
+        Double cgpa = body.get("cgpa") != null ? ((Number) body.get("cgpa")).doubleValue() : null;
+
+        return ResponseEntity.ok(dataStore.upsertSgpa(uid(r), semester, sgpa, cgpa));
+    }
 
     // ── ATTENDANCE ────────────────────────────────────────────────────────────
     @GetMapping("/attendance")
     public ResponseEntity<List<Map<String, Object>>> attendance(HttpServletRequest r) {
         return ResponseEntity.ok(dataStore.getAttByUserId(uid(r)));
     }
-    
 
     // ── CERTIFICATES ──────────────────────────────────────────────────────────
     @GetMapping("/certificates")
@@ -163,4 +213,3 @@ public class MenteeController {
 
     private String safe(String s) { return s != null ? s : ""; }
 }
-

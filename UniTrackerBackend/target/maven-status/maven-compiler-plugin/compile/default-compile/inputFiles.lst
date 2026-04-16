@@ -1,19 +1,23 @@
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\config\SecurityConfig.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\MenteeController.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\User.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\Marks.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\MarksRepository.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\Certificate.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\service\DataStore.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\AuthController.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\AttendanceRepository.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\MentorController.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\Attendance.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\CertificateRepository.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\UserRepository.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\UniTrackerApplication.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\MentorRemark.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\security\JwtAuthFilter.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\security\JwtUtil.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\RemarkRepository.java
-C:\Users\rawoo\VScode\ReactJs\UniTracker\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\FileController.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\Marks.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\MentorController.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\SgpaRecord.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\MarksRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\UniTrackerApplication.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\MentorBatchRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\AuthController.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\AttendanceRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\security\JwtAuthFilter.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\config\SecurityConfig.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\FileController.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\Attendance.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\security\JwtUtil.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\MentorRemark.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\User.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\UserRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\MentorBatch.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\RemarkRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\entity\Certificate.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\SgpaRecordRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\controller\MenteeController.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\repository\CertificateRepository.java
+C:\Users\aarus\OneDrive\Desktop\Mini Project\UniTracker\UniTrackerBackend\src\main\java\com\unitracker\service\DataStore.java

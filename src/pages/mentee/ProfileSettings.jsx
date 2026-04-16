@@ -38,6 +38,8 @@ export default function ProfileSettings() {
         phone:        p.phone        || "",
         parent1Phone: p.parent1Phone || p.parent1_phone || "",
         parent2Phone: p.parent2Phone || p.parent2_phone || "",
+        parent1Email: p.parent1Email || p.parent1_email || "",
+        parent2Email: p.parent2Email || p.parent2_email || "",
         roll:         p.roll         || "",
         division:     p.division     || "",
         batch:        p.batch        || "",
@@ -62,9 +64,12 @@ export default function ProfileSettings() {
     } finally { setSaving(false); }
   };
 
-  // completeness
   const completeness = () => {
-    const fields = [form.phone, form.parent1Phone, form.parent2Phone, form.department, form.batch, form.year, form.semester, form.roll, form.division];
+    const fields = [
+      form.phone, form.parent1Phone, form.parent2Phone,
+      form.parent1Email,
+      form.department, form.batch, form.year, form.semester, form.roll, form.division
+    ];
     const filled = fields.filter(f => f && String(f).trim()).length;
     return Math.round((filled / fields.length) * 100);
   };
@@ -111,9 +116,9 @@ export default function ProfileSettings() {
         </div>
       </div>
 
-      {/* Contact info */}
+      {/* Contact info — now includes parent emails */}
       <div className="wcard" style={{ marginBottom: 20 }}>
-        <div className="wcard-head"><div className="wcard-title">📱 Contact Numbers</div></div>
+        <div className="wcard-head"><div className="wcard-title">📱 Contact Numbers &amp; Emails</div></div>
         <div className="wcard-body">
           <div className="form-grid">
             <Field label="Your Phone Number">
@@ -124,9 +129,17 @@ export default function ProfileSettings() {
               <input className="form-input" placeholder="e.g. 9876543210"
                 value={form.parent1Phone} onChange={e => setF("parent1Phone", e.target.value)} />
             </Field>
+            <Field label="Parent / Guardian 1 Email">
+              <input className="form-input" type="email" placeholder="e.g. parent1@email.com"
+                value={form.parent1Email} onChange={e => setF("parent1Email", e.target.value)} />
+            </Field>
             <Field label="Parent / Guardian 2 Phone">
               <input className="form-input" placeholder="e.g. 9876543210 (optional)"
                 value={form.parent2Phone} onChange={e => setF("parent2Phone", e.target.value)} />
+            </Field>
+            <Field label="Parent / Guardian 2 Email">
+              <input className="form-input" type="email" placeholder="e.g. parent2@email.com (optional)"
+                value={form.parent2Email} onChange={e => setF("parent2Email", e.target.value)} />
             </Field>
           </div>
         </div>

@@ -17,6 +17,7 @@ public class DataStore {
     private final AttendanceRepository  attendanceRepository;
     private final CertificateRepository certificateRepository;
     private final RemarkRepository      remarkRepository;
+    private final SgpaRecordRepository  sgpaRecordRepository;
 
     // ── USER ──────────────────────────────────────────────────────────────────
 
@@ -58,39 +59,67 @@ public class DataStore {
     }
 
     /**
-     * Mentor override: upsert a special "MENTOR_OVERRIDE" month record so that
-     * avg_attendance recalculates to the intended value without touching real
-     * monthly data.
-     *
-     * Strategy:
-     *   1. Delete any existing MENTOR_OVERRIDE record for this user.
-     *   2. Find all real monthly records and compute their average.
-     *   3. If the real average already matches the target, we're done.
-     *   4. Otherwise insert a synthetic record whose percentage equals the target,
-     *      weighted so the new average across (realCount + 1) rows equals target.
-     *      If the math is out of range, we just insert target directly — the
-     *      displayed avg_attendance on the list page is computed the same way, so
-     *      it will match.
-     *
-     * Simpler alternative used here: replace ALL records with a single
-     * MENTOR_OVERRIDE row that carries the desired percentage. This keeps the
-     * implementation minimal and avoids needing a separate DB column.
-     *
-     * If you want to preserve monthly breakdown alongside the override, switch to
-     * the weighted-insert strategy described above.
+     * Mentor adds or updates a specific month's attendance record.
+     * Unlike the old "MENTOR_OVERRIDE" strategy, this inserts/updates the real
+     * month row so the line chart reflects all months properly.
+     */
+    public Map<String, Object> upsertMonthlyAttendance(int userId, String month, int percentage) {
+        List<Attendance> existing = attendanceRepository.findByUserId(userId);
+        Optional<Attendance> existing_month = existing.stream()
+                .filter(a -> month.equalsIgnoreCase(a.getMonth()))
+                .findFirst();
+
+        Attendance record;
+        if (existing_month.isPresent()) {
+            record = existing_month.get();
+            record.setPercentage(percentage);
+            // days_present / days_absent not tracked when mentor sets percentage directly
+            record.setDaysPresent(0);
+            record.setDaysAbsent(0);
+        } else {
+            record = new Attendance(0, userId, month, percentage, 0, 0);
+        }
+        return attToMap(attendanceRepository.save(record));
+    }
+
+    /**
+     * Legacy override kept for backward compatibility — sets a single
+     * MENTOR_OVERRIDE row.
      */
     public Map<String, Object> upsertAttendanceOverride(int userId, int percentage) {
-        // Remove any existing override record for this user
         List<Attendance> existing = attendanceRepository.findByUserId(userId);
         existing.stream()
                 .filter(a -> "MENTOR_OVERRIDE".equals(a.getMonth()))
                 .forEach(a -> attendanceRepository.deleteById(a.getId()));
 
-        // Insert fresh override row
-        // days_present / days_absent are not meaningful here — set to 0
         Attendance override = new Attendance(0, userId, "MENTOR_OVERRIDE", percentage, 0, 0);
         Attendance saved = attendanceRepository.save(override);
         return attToMap(saved);
+    }
+
+    // ── SGPA / CGPA ───────────────────────────────────────────────────────────
+
+    public List<Map<String, Object>> getSgpaByUserId(int userId) {
+        return sgpaRecordRepository.findByUserId(userId).stream()
+                .map(this::sgpaToMap).collect(Collectors.toList());
+    }
+
+    public Map<String, Object> upsertSgpa(int userId, int semester, Double sgpa, Double cgpa) {
+        SgpaRecord record = sgpaRecordRepository
+                .findByUserIdAndSemester(userId, semester)
+                .orElse(new SgpaRecord(0, userId, semester, null, null));
+        record.setSgpa(sgpa);
+        record.setCgpa(cgpa);
+        return sgpaToMap(sgpaRecordRepository.save(record));
+    }
+
+    /** Latest CGPA for this user (highest semester that has a cgpa value). */
+    public Double getLatestCgpa(int userId) {
+        return sgpaRecordRepository.findByUserId(userId).stream()
+                .filter(r -> r.getCgpa() != null)
+                .max(Comparator.comparingInt(SgpaRecord::getSemester))
+                .map(SgpaRecord::getCgpa)
+                .orElse(null);
     }
 
     // ── CERTIFICATES ──────────────────────────────────────────────────────────
@@ -143,6 +172,8 @@ public class DataStore {
         m.put("semester",     u.getSemester() != null ? u.getSemester() : 0);
         m.put("parent1Phone", s(u.getParent1Phone()));
         m.put("parent2Phone", s(u.getParent2Phone()));
+        m.put("parent1Email", s(u.getParent1Email()));
+        m.put("parent2Email", s(u.getParent2Email()));
         return m;
     }
 
@@ -169,6 +200,16 @@ public class DataStore {
         m.put("percentage",   x.getPercentage());
         m.put("days_present", x.getDaysPresent());
         m.put("days_absent",  x.getDaysAbsent());
+        return m;
+    }
+
+    private Map<String, Object> sgpaToMap(SgpaRecord x) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id",       x.getId());
+        m.put("user_id",  x.getUserId());
+        m.put("semester", x.getSemester());
+        m.put("sgpa",     x.getSgpa());
+        m.put("cgpa",     x.getCgpa());
         return m;
     }
 

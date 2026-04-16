@@ -25,6 +25,9 @@ export default function Dashboard({ user, onNavigate }) {
   if (!dash?.parent2Phone) missing.push("Parent 2 phone");
   const profileComplete = missing.length === 0;
 
+  // CGPA from DB
+  const cgpaDisplay = dash?.cgpa != null ? parseFloat(dash.cgpa).toFixed(2) : "—";
+
   return (
     <div className="page">
 
@@ -74,18 +77,15 @@ export default function Dashboard({ user, onNavigate }) {
               <div style={{ fontSize: 11, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.08em" }}>Batch</div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>{dash.batch || "—"}</div>
             </div>
-            
-            
-            
           </div>
         </div>
       )}
 
-      {/* Stat cards */}
+      {/* Stat cards — CGPA now real from DB */}
       <div className="stat-row" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         {[
           { Icon: Icons.Calendar, value: dash?.avg_attendance != null ? `${dash.avg_attendance}%` : "—", label: "Attendance" },
-          { Icon: Icons.Chart,    value: "—",                                                             label: "CGPA" },
+          { Icon: Icons.Chart,    value: cgpaDisplay,                                                     label: "CGPA" },
           { Icon: Icons.Award,    value: dash?.certificate_count ?? certs.length,                        label: "Certificates" },
         ].map(({ Icon, value, label }) => (
           <div className="stat-card" key={label}>
@@ -96,8 +96,8 @@ export default function Dashboard({ user, onNavigate }) {
         ))}
       </div>
 
-      {/* Mentor info */}
-      <div className="wcard">
+      {/* Assigned Mentor — from API batch-based lookup */}
+      <div className="wcard" style={{ marginTop: 20 }}>
         <div className="wcard-head"><div className="wcard-title">👨‍🏫 Assigned Mentor</div></div>
         <div className="wcard-body">
           {dash?.mentor ? (
@@ -106,6 +106,11 @@ export default function Dashboard({ user, onNavigate }) {
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{dash.mentor.name}</div>
                 <div style={{ fontSize: 12, color: "var(--muted)" }}>{dash.mentor.email}</div>
+                {dash.batch && (
+                  <div style={{ fontSize: 11, marginTop: 2, color: "var(--muted)" }}>
+                    Batch: <strong>{dash.batch}</strong>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -116,7 +121,7 @@ export default function Dashboard({ user, onNavigate }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 20 }}>
         {/* Recent certificates */}
         <div className="wcard">
           <div className="wcard-head"><div className="wcard-title">Recent Certificates</div></div>
