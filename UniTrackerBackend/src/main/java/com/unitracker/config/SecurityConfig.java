@@ -30,6 +30,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/api/auth/**", "/api/files/**").permitAll()
                 .requestMatchers("/api/mentor/**").hasRole("MENTOR")
+                .requestMatchers("/api/mentee/certificates/{id}").hasAnyRole("MENTEE", "MENTOR")
                 .requestMatchers("/api/mentee/**").hasRole("MENTEE")
                 .anyRequest().authenticated()
             )

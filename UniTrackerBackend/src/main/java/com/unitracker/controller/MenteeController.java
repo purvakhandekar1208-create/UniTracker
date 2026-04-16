@@ -30,6 +30,7 @@ public class MenteeController {
 
     private int    uid(HttpServletRequest r)   { return (int)    r.getAttribute("userId"); }
     private String uname(HttpServletRequest r) { return (String) r.getAttribute("userName"); }
+    private String urole(HttpServletRequest r) { return (String) r.getAttribute("userRole"); }
 
     // ── PROFILE ──────────────────────────────────────────────────────────────
     @GetMapping("/profile")
@@ -188,7 +189,8 @@ public class MenteeController {
         return dataStore.getCertByIdFull(id)
             .map(cert -> {
                 int ownerId = ((Number) cert.get("user_id")).intValue();
-                if (ownerId != uid(r))
+                // Allow owner OR any mentor to view
+                if (ownerId != uid(r) && !"mentor".equalsIgnoreCase(urole(r)))
                     return ResponseEntity.status(403).<Map<String, Object>>body(
                         Map.of("error", "Not your certificate"));
                 return ResponseEntity.ok(cert);
