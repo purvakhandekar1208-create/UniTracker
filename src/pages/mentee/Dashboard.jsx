@@ -129,18 +129,22 @@ export default function Dashboard({ user, onNavigate }) {
             <div className="wcard-body"><div className="page-sub">No certificates uploaded yet.</div></div>
           ) : (
             <ul className="recent-list">
-              {certs.slice(0, 5).map((cert, i) => (
-                <li key={cert.id} className="recent-item">
-                  <div>
-                    <span className="recent-num">{i + 1}.</span>
-                    <span className="recent-name">{cert.title ?? cert.name}</span>
-                  </div>
-                  {cert.file_path && (
-                    <a href={`http://localhost:8081/api/files/certificates/${cert.id}`}
-                       target="_blank" rel="noreferrer" className="btn-view-pdf">View PDF</a>
-                  )}
-                </li>
-              ))}
+              {certs.slice(0, 5).map((cert, i) => {
+                return (
+                  <li key={cert.id} className="recent-item">
+                    <div>
+                      <span className="recent-num">{i + 1}.</span>
+                      <span className="recent-name">{cert.title ?? cert.name}</span>
+                    </div>
+                    <button
+                      className="btn-view-pdf"
+                      onClick={() => onNavigate("certificates", { certId: cert.id })}
+                    >
+                      View
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

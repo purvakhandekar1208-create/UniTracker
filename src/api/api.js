@@ -68,6 +68,8 @@ export const getMenteeDashboard  = () => api("/api/mentee/dashboard");
 export const getMenteeMarks      = () => api("/api/mentee/marks");
 export const getMenteeAttendance = () => api("/api/mentee/attendance");
 export const getMenteeCerts      = () => api("/api/mentee/certificates");
+export const getMenteeCertById   = (id) => api(`/api/mentee/certificates/${id}`);  // returns file_data
+export const deleteCertificate   = (id) => api(`/api/mentee/certificates/${id}`, { method: "DELETE" });
 export const getMenteeRemarks    = () => api("/api/mentee/remarks");
 
 // GPA — semester-wise SGPA/CGPA stored in DB
@@ -97,6 +99,32 @@ export const uploadCertificate = async (formData) => {
   }
   return res.json();
 };
+
+/**
+ * Converts file to Base64 on the frontend then sends as JSON.
+ * No multipart, no disk storage — file_data lives in the DB.
+ */
+export const uploadCertificateBase64 = (title, provider, issueDate, file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        // reader.result = "data:application/pdf;base64,XXXX..."
+        const dataUrl  = reader.result;
+        const comma    = dataUrl.indexOf(",");
+        const fileData = dataUrl.substring(comma + 1);          // raw Base64 only
+        const fileType = file.type;                              // MIME type
+
+        const result = await api("/api/mentee/certificates/base64", {
+          method: "POST",
+          body: JSON.stringify({ title, provider, issue_date: issueDate, file_type: fileType, file_data: fileData }),
+        });
+        resolve(result);
+      } catch (e) { reject(e); }
+    };
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
 
 // ═══════════════════════════════════════════════════════════════════
 // MENTOR

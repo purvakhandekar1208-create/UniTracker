@@ -131,12 +131,28 @@ public class DataStore {
 
     public Map<String, Object> addCert(int userId, String title, String provider,
                                         String issueDate, String filePath) {
-        Certificate c = new Certificate(0, userId, title, provider, issueDate, filePath);
+        Certificate c = new Certificate(0, userId, title, provider, issueDate, filePath, null, null);
         return certToMap(certificateRepository.save(c));
+    }
+
+    /** Stores certificate as Base64 in DB — no disk needed. Returns full map with file_data. */
+    public Map<String, Object> addCertBase64(int userId, String title, String provider,
+                                              String issueDate, String fileType, String fileData) {
+        Certificate c = new Certificate(0, userId, title, provider, issueDate, null, fileData, fileType);
+        return certToMapFull(certificateRepository.save(c));   // ← full so viewer works immediately
     }
 
     public Optional<Map<String, Object>> getCertById(int id) {
         return certificateRepository.findById(id).map(this::certToMap);
+    }
+
+    /** Returns the cert WITH file_data — used only by the single-cert viewer endpoint. */
+    public Optional<Map<String, Object>> getCertByIdFull(int id) {
+        return certificateRepository.findById(id).map(this::certToMapFull);
+    }
+
+    public void deleteCert(int id) {
+        certificateRepository.deleteById(id);
     }
 
     // ── REMARKS ───────────────────────────────────────────────────────────────
@@ -221,6 +237,15 @@ public class DataStore {
         m.put("provider",   x.getProvider());
         m.put("issue_date", x.getIssueDate());
         m.put("file_path",  x.getFilePath());
+        m.put("file_type",  x.getFileType());
+        // file_data intentionally excluded — use getCertByIdFull() when viewer needs it
+        return m;
+    }
+
+    /** Full cert map including Base64 file_data — only used for single-cert viewer. */
+    private Map<String, Object> certToMapFull(Certificate x) {
+        Map<String, Object> m = new LinkedHashMap<>(certToMap(x));
+        m.put("file_data", x.getFileData());
         return m;
     }
 

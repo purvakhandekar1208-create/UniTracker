@@ -177,7 +177,23 @@ public class MenteeController {
     // ── CERTIFICATES ──────────────────────────────────────────────────────────
     @GetMapping("/certificates")
     public ResponseEntity<List<Map<String, Object>>> certs(HttpServletRequest r) {
-        return ResponseEntity.ok(dataStore.getCertsByUserId(uid(r)));
+        return ResponseEntity.ok(dataStore.getCertsByUserId(uid(r)));  // no file_data (fast)
+    }
+
+    /** GET /api/mentee/certificates/{id} — returns full cert including file_data for viewer */
+    @GetMapping("/certificates/{id}")
+    public ResponseEntity<Map<String, Object>> certById(
+            HttpServletRequest r,
+            @PathVariable int id) {
+        return dataStore.getCertByIdFull(id)
+            .map(cert -> {
+                int ownerId = ((Number) cert.get("user_id")).intValue();
+                if (ownerId != uid(r))
+                    return ResponseEntity.status(403).<Map<String, Object>>body(
+                        Map.of("error", "Not your certificate"));
+                return ResponseEntity.ok(cert);
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/certificates")
@@ -205,7 +221,52 @@ public class MenteeController {
         return ResponseEntity.ok(cert);
     }
 
-    // ── REMARKS ───────────────────────────────────────────────────────────────
+    /**
+     * Base64 upload — stores file content directly in the DB.
+     * No disk access, no uploads folder.
+     * Body: { title, provider, issue_date, file_type, file_data }
+     * where file_data is a raw Base64 string (without the data:...;base64, prefix).
+     */
+    @PostMapping("/certificates/base64")
+    public ResponseEntity<Map<String, Object>> uploadCertBase64(
+            HttpServletRequest r,
+            @RequestBody Map<String, String> body) {
+
+        String title     = body.get("title");
+        String provider  = body.get("provider");
+        String issueDate = body.getOrDefault("issue_date", "");
+        String fileType  = body.get("file_type");
+        String fileData  = body.get("file_data");
+
+        if (title    == null || title.isBlank())    return ResponseEntity.badRequest().body(Map.of("error", "title required"));
+        if (provider == null || provider.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "provider required"));
+        if (fileType == null || fileType.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "file_type required"));
+        if (fileData == null || fileData.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "file_data required"));
+
+        return ResponseEntity.ok(
+            dataStore.addCertBase64(uid(r), title, provider, issueDate, fileType, fileData)
+            // addCertBase64 internally calls certToMap (no file_data), so re-fetch full
+        );
+    }
+
+    /** DELETE /api/mentee/certificates/{id} — only the owning mentee can delete */
+    @DeleteMapping("/certificates/{id}")
+    public ResponseEntity<Map<String, Object>> deleteCert(
+            HttpServletRequest r,
+            @PathVariable int id) {
+
+        // Ownership check — ensures mentees can't delete each other's certs
+        var certOpt = dataStore.getCertById(id);
+        if (certOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        Map<String, Object> cert = certOpt.get();
+        int ownerId = ((Number) cert.get("user_id")).intValue();
+        if (ownerId != uid(r))
+            return ResponseEntity.status(403).body(Map.of("error", "You are not the owner of this certificate"));
+
+        dataStore.deleteCert(id);
+        return ResponseEntity.ok(Map.of("deleted", id));
+    }
     @GetMapping("/remarks")
     public ResponseEntity<List<Map<String, Object>>> remarks(HttpServletRequest r) {
         return ResponseEntity.ok(dataStore.getRemarksByMenteeId(uid(r)));

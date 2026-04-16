@@ -207,6 +207,7 @@ export default function App() {
   const [user,           setUser]           = useState(null);
   const [activePage,     setActivePage]     = useState("dashboard");
   const [selectedMentee, setSelectedMentee] = useState(null);
+  const [selectedCertId, setSelectedCertId] = useState(null);
   const [myBatches,      setMyBatches]      = useState([]);
 
   // Restore session on mount
@@ -259,9 +260,11 @@ export default function App() {
     return PAGE_TITLES[activePage] || "UniTracker";
   };
 
-  const navigate = (page) => {
+  const navigate = (page, data = null) => {
     setActivePage(page);
     if (page !== "mentee-detail") setSelectedMentee(null);
+    if (page === "certificates") setSelectedCertId(data?.certId || null);
+    else setSelectedCertId(null);
   };
 
   const viewMentee = (mentee) => {
@@ -343,7 +346,7 @@ export default function App() {
           <div className="page">
             <div className="page-heading">Certificates</div>
             <div className="page-sub">Your uploaded certificates</div>
-            <Certificates />
+            <Certificates viewCertId={selectedCertId} />
           </div>
         );
       case "profilesettings":
