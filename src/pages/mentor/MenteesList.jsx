@@ -182,7 +182,6 @@ export default function MenteesList({ onViewMentee, myBatches = [] }) {
                     <th>Phone</th>
                     <th>Attendance</th>
                     <th>Certificates</th>
-                    <th>Courses</th>
                   </tr>
                 </thead>
 
@@ -283,7 +282,6 @@ export default function MenteesList({ onViewMentee, myBatches = [] }) {
                         </td>
 
                         <td>{m.cert_count ?? "—"}</td>
-                        <td>{m.course_count ?? "—"}</td>
                       </tr>
                     );
                   })}

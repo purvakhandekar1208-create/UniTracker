@@ -12,7 +12,6 @@ import Login from "./pages/Login";
 import MenteeDashboard  from "./pages/mentee/Dashboard";
 import Marks            from "./pages/mentee/Marks";
 import Certificates     from "./pages/mentee/Certificates";
-import Courses          from "./pages/mentee/Courses";
 import Attendance       from "./pages/mentee/Attendance";
 import ProfileSettings  from "./pages/mentee/ProfileSettings";
 
@@ -34,10 +33,10 @@ function Academics() {
   return (
     <div className="page">
       <div className="page-heading">Academics</div>
-      <div className="page-sub">Your marks, courses and attendance</div>
+      <div className="page-sub">Your marks and attendance</div>
 
       <div className="tabs-bar">
-        {["marks", "courses", "attendance"].map((t) => (
+        {["marks", "attendance"].map((t) => (
           <div
             key={t}
             className={`tab-item ${tab === t ? "active" : ""}`}
@@ -49,7 +48,6 @@ function Academics() {
       </div>
 
       {tab === "marks"      && <Marks      readOnly />}
-      {tab === "courses"    && <Courses    readOnly />}
       {tab === "attendance" && <Attendance readOnly />}
     </div>
   );

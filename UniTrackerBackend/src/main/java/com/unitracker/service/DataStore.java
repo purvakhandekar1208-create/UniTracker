@@ -15,7 +15,6 @@ public class DataStore {
     private final UserRepository        userRepository;
     private final MarksRepository       marksRepository;
     private final AttendanceRepository  attendanceRepository;
-    private final CourseRepository      courseRepository;
     private final CertificateRepository certificateRepository;
     private final RemarkRepository      remarkRepository;
 
@@ -36,7 +35,6 @@ public class DataStore {
                     Map<String, Object> m = userToMap(u);
                     int uid = u.getId();
                     m.put("cert_count",    certificateRepository.findByUserId(uid).size());
-                    m.put("course_count",  courseRepository.findByUserId(uid).size());
                     double avg = attendanceRepository.findByUserId(uid).stream()
                             .mapToInt(Attendance::getPercentage).average().orElse(0);
                     m.put("avg_attendance", (int) Math.round(avg));
@@ -93,19 +91,6 @@ public class DataStore {
         Attendance override = new Attendance(0, userId, "MENTOR_OVERRIDE", percentage, 0, 0);
         Attendance saved = attendanceRepository.save(override);
         return attToMap(saved);
-    }
-
-    // ── COURSES ───────────────────────────────────────────────────────────────
-
-    public List<Map<String, Object>> getCoursesByUserId(int userId) {
-        return courseRepository.findByUserId(userId).stream()
-                .map(this::courseToMap).collect(Collectors.toList());
-    }
-
-    public Map<String, Object> addCourse(int userId, String courseName,
-                                          String provider, int progress, String status) {
-        Course c = new Course(0, userId, courseName, provider, progress, status);
-        return courseToMap(courseRepository.save(c));
     }
 
     // ── CERTIFICATES ──────────────────────────────────────────────────────────
@@ -184,17 +169,6 @@ public class DataStore {
         m.put("percentage",   x.getPercentage());
         m.put("days_present", x.getDaysPresent());
         m.put("days_absent",  x.getDaysAbsent());
-        return m;
-    }
-
-    private Map<String, Object> courseToMap(Course x) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id",          x.getId());
-        m.put("user_id",     x.getUserId());
-        m.put("course_name", x.getCourseName());
-        m.put("provider",    x.getProvider());
-        m.put("progress",    x.getProgress());
-        m.put("status",      x.getStatus());
         return m;
     }
 

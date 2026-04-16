@@ -67,7 +67,6 @@ export const getMenteeProfile    = () => api("/api/mentee/profile");
 export const getMenteeDashboard  = () => api("/api/mentee/dashboard");
 export const getMenteeMarks      = () => api("/api/mentee/marks");
 export const getMenteeAttendance = () => api("/api/mentee/attendance");
-export const getMenteeCourses    = () => api("/api/mentee/courses");
 export const getMenteeCerts      = () => api("/api/mentee/certificates");
 export const getMenteeRemarks    = () => api("/api/mentee/remarks");
 
@@ -76,9 +75,6 @@ export const updateMenteeProfile = (fields) =>
     method: "PUT",
     body: JSON.stringify(fields),
   });
-
-export const addCourse = (courseData) =>
-  api("/api/mentee/courses", { method: "POST", body: JSON.stringify(courseData) });
 
 export const uploadCertificate = async (formData) => {
   const token = getToken();
@@ -104,7 +100,6 @@ export const getAllMentees           = () => api("/api/mentor/mentees");
 export const getMenteeMarksById      = (id) => api(`/api/mentor/mentees/${id}/marks`);
 export const getMenteeAttendanceById = (id) => api(`/api/mentor/mentees/${id}/attendance`);
 export const getMenteeCertsById      = (id) => api(`/api/mentor/mentees/${id}/certificates`);
-export const getMenteeCoursesById    = (id) => api(`/api/mentor/mentees/${id}/courses`);
 export const getMenteeRemarksById    = (id) => api(`/api/mentor/mentees/${id}/remarks`);
 
 export const addRemark = (menteeId, message) =>

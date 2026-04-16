@@ -133,14 +133,6 @@ export const MOCK_CERTS = [
 ];
 
 
-// Courses
-export const MOCK_COURSES = [
-  { id: 1, name: "Machine Learning A-Z", platform: "Udemy", status: "Ongoing", progress: 65 },
-  { id: 2, name: "React - The Complete Guide", platform: "Udemy", status: "Completed", progress: 100 },
-  { id: 3, name: "DSA Masterclass", platform: "Coursera", status: "Ongoing", progress: 42 }
-];
-
-
 // Attendance
 export const ATTENDANCE_DATA = [
   { month: "Jul", present: 22, total: 24 },

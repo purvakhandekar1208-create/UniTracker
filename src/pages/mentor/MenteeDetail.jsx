@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { Avatar } from "../../assets/Icons";
-import { getMenteeMarksById, getMenteeAttendanceById, getMenteeCertsById, getMenteeCoursesById, getMenteeRemarksById, addRemark } from "../../api/api";
+import { getMenteeMarksById, getMenteeAttendanceById, getMenteeCertsById, getMenteeRemarksById, addRemark } from "../../api/api";
 import Marks        from "../mentee/Marks";
 import Certificates from "../mentee/Certificates";
-import Courses      from "../mentee/Courses";
 import Attendance   from "../mentee/Attendance";
 
-const TABS = ["marks", "certificates", "courses", "attendance", "remarks", "profile"];
+const TABS = ["marks", "certificates", "attendance", "remarks", "profile"];
 
 // ── Remarks tab for mentor viewing a specific mentee ──────────────────────────
 function RemarksTab({ mentee }) {
@@ -65,40 +64,92 @@ function RemarksTab({ mentee }) {
 }
 
 // ── Profile tab ───────────────────────────────────────────────────────────────
-function ProfileTab({ mentee }) {
+const YEAR_LABELS  = { "1": "1st Year", "2": "2nd Year", "3": "3rd Year", "4": "4th Year" };
+const SEM_LABELS   = { "1": "Sem 1", "2": "Sem 2", "3": "Sem 3", "4": "Sem 4",
+                       "5": "Sem 5", "6": "Sem 6", "7": "Sem 7", "8": "Sem 8" };
+
+function ReadField({ label, value }) {
   return (
-    <div className="wcard">
-      <div className="wcard-body">
-        <div style={{ display:"flex", alignItems:"center", gap:20, marginBottom:24, paddingBottom:24, borderBottom:"1px solid var(--border)" }}>
-          <Avatar name={mentee.name} size={70} />
-          <div>
-            <div style={{ fontFamily:"var(--font-head)", fontSize:22, fontWeight:700 }}>{mentee.name}</div>
-            <div style={{ fontSize:13, color:"var(--muted)", marginTop:4 }}>
-              Roll No: {mentee.roll ?? "—"} · Div: {mentee.division ?? mentee.div ?? "—"}
-            </div>
-            <div style={{ marginTop:8 }}>
-              <span className="badge badge-red">Division {mentee.division ?? mentee.div ?? "—"}</span>
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <div style={{ background:"#f3f4f6", border:"1.5px solid var(--border)", borderRadius:6,
+                    padding:"10px 13px", fontSize:14, color:"var(--muted)", cursor:"default" }}>
+        {value || "—"}
+      </div>
+    </div>
+  );
+}
+
+function ProfileTab({ mentee }) {
+  const yearVal = mentee.year     ? String(mentee.year)     : "";
+  const semVal  = mentee.semester ? String(mentee.semester) : "";
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+      {/* ── Header card ── */}
+      <div className="wcard">
+        <div className="wcard-body">
+          <div style={{ display:"flex", alignItems:"center", gap:20 }}>
+            <Avatar name={mentee.name} size={70} />
+            <div>
+              <div style={{ fontFamily:"var(--font-head)", fontSize:22, fontWeight:700 }}>{mentee.name}</div>
+              <div style={{ fontSize:13, color:"var(--muted)", marginTop:4 }}>
+                Roll No: {mentee.roll ?? "—"} · Div: {mentee.division ?? mentee.div ?? "—"}
+              </div>
+              <div style={{ marginTop:8 }}>
+                <span className="badge badge-red">Division {mentee.division ?? mentee.div ?? "—"}</span>
+              </div>
             </div>
           </div>
         </div>
-        <div className="form-grid">
-          {[
-            ["Full Name",   mentee.name],
-            ["Email",       mentee.email],
-            ["Phone",       mentee.phone],
-            ["Roll Number", mentee.roll],
-            ["Division",    mentee.division ?? mentee.div],
-            ["Role",        mentee.role],
-          ].map(([label, value]) => (
-            <div className="form-group" key={label}>
-              <label className="form-label">{label}</label>
-              <div style={{ background:"#fafafa", border:"1.5px solid var(--border)", borderRadius:6, padding:"10px 13px", fontSize:14 }}>
-                {value || "—"}
-              </div>
-            </div>
-          ))}
+      </div>
+
+      {/* ── Account Info ── */}
+      <div className="wcard">
+        <div className="wcard-head"><div className="wcard-title">Account Info</div></div>
+        <div className="wcard-body">
+          <div className="form-grid">
+            <ReadField label="Full Name" value={mentee.name} />
+            <ReadField label="Email"     value={mentee.email} />
+            <ReadField label="Role"      value={mentee.role} />
+          </div>
         </div>
       </div>
+
+      {/* ── Contact Numbers ── */}
+      <div className="wcard">
+        <div className="wcard-head"><div className="wcard-title">📱 Contact Numbers</div></div>
+        <div className="wcard-body">
+          <div className="form-grid">
+            <ReadField label="Phone"                    value={mentee.phone} />
+            <ReadField label="Parent / Guardian 1 Phone" value={mentee.parent1Phone ?? mentee.parent1_phone} />
+            <ReadField label="Parent / Guardian 2 Phone" value={mentee.parent2Phone ?? mentee.parent2_phone} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Academic Details ── */}
+      <div className="wcard">
+        <div className="wcard-head"><div className="wcard-title">🎓 Academic Details</div></div>
+        <div className="wcard-body">
+          <div className="form-group">
+            <label className="form-label">Department / Branch</label>
+            <div style={{ background:"#f3f4f6", border:"1.5px solid var(--border)", borderRadius:6,
+                          padding:"10px 13px", fontSize:14, color:"var(--muted)" }}>
+              {mentee.department || "—"}
+            </div>
+          </div>
+          <div className="form-grid" style={{ marginTop:12 }}>
+            <ReadField label="Batch"       value={mentee.batch} />
+            <ReadField label="Year"        value={YEAR_LABELS[yearVal]} />
+            <ReadField label="Semester"    value={SEM_LABELS[semVal]} />
+            <ReadField label="Roll Number" value={mentee.roll} />
+            <ReadField label="Division"    value={mentee.division ?? mentee.div} />
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -108,7 +159,6 @@ export default function MenteeDetail({ mentee, onBack }) {
   const [activeTab, setActiveTab] = useState("marks");
   const [marksData,  setMarksData]  = useState(null);
   const [certsData,  setCertsData]  = useState(null);
-  const [coursesData,setCoursesData]= useState(null);
   const [attData,    setAttData]    = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
 
@@ -118,12 +168,10 @@ export default function MenteeDetail({ mentee, onBack }) {
     Promise.all([
       getMenteeMarksById(mentee.id),
       getMenteeCertsById(mentee.id),
-      getMenteeCoursesById(mentee.id),
       getMenteeAttendanceById(mentee.id),
-    ]).then(([marks, certs, courses, att]) => {
+    ]).then(([marks, certs, att]) => {
       setMarksData(marks);
       setCertsData(certs);
-      setCoursesData(courses);
       setAttData(att);
     }).catch(console.error)
       .finally(() => setDataLoading(false));
@@ -149,7 +197,6 @@ export default function MenteeDetail({ mentee, onBack }) {
         </div>
         {[
           ["Attendance", `${avgAtt}%`],
-          ["Courses",    coursesData?.length ?? "—"],
           ["Certs",      certsData?.length   ?? "—"],
         ].map(([label, value]) => (
           <div className="mentee-hdr-stat" key={label}>

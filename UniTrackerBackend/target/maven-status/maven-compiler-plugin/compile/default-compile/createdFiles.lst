@@ -1,11 +1,9 @@
-com\unitracker\repository\CourseRepository.class
 com\unitracker\entity\Marks.class
 com\unitracker\repository\RemarkRepository.class
 com\unitracker\controller\MentorController.class
 com\unitracker\UniTrackerApplication.class
 com\unitracker\config\SecurityConfig.class
 com\unitracker\entity\Attendance.class
-com\unitracker\entity\Course.class
 com\unitracker\entity\User.class
 com\unitracker\security\JwtUtil.class
 com\unitracker\service\DataStore.class

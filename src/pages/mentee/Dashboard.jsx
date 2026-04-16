@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Icons } from "../../assets/Icons";
 import { getMenteeDashboard } from "../../api/api";
 
-export default function Dashboard({ user }) {
+export default function Dashboard({ user, onNavigate }) {
   const [dash,    setDash]    = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +38,10 @@ export default function Dashboard({ user }) {
           <span style={{ fontSize: 20 }}>⚠️</span>
           <div>
             <strong>Complete your profile!</strong> Still missing: {missing.join(", ")}.
-            {" "}<span style={{ color: "var(--red)", textDecoration: "underline", cursor: "pointer" }}>
+            {" "}<span
+              onClick={() => onNavigate("profilesettings")}
+              style={{ color: "var(--red)", textDecoration: "underline", cursor: "pointer" }}
+            >
               Go to Profile Settings →
             </span>
           </div>
@@ -79,12 +82,11 @@ export default function Dashboard({ user }) {
       )}
 
       {/* Stat cards */}
-      <div className="stat-row" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+      <div className="stat-row" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         {[
           { Icon: Icons.Calendar, value: dash?.avg_attendance != null ? `${dash.avg_attendance}%` : "—", label: "Attendance" },
-          { Icon: Icons.Chart,    value: "—",                                                             label: "Current GPA" },
+          { Icon: Icons.Chart,    value: "—",                                                             label: "CGPA" },
           { Icon: Icons.Award,    value: dash?.certificate_count ?? certs.length,                        label: "Certificates" },
-          { Icon: Icons.Book,     value: dash?.course_count ?? "—",                                      label: "Courses" },
         ].map(({ Icon, value, label }) => (
           <div className="stat-card" key={label}>
             <div className="stat-icon-circle"><Icon /></div>

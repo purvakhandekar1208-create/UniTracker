@@ -91,7 +91,6 @@ public class MenteeController {
         resp.put("name",              name);
         resp.put("avg_attendance",    (int) Math.round(avg));
         resp.put("certificate_count", dataStore.getCertsByUserId(id).size());
-        resp.put("course_count",      dataStore.getCoursesByUserId(id).size());
         resp.put("remarks",           dataStore.getRemarksByMenteeId(id));
         resp.put("certificates",      dataStore.getCertsByUserId(id));
 
@@ -124,24 +123,6 @@ public class MenteeController {
         return ResponseEntity.ok(dataStore.getAttByUserId(uid(r)));
     }
     
-
-    // ── COURSES ───────────────────────────────────────────────────────────────
-    @GetMapping("/courses")
-    public ResponseEntity<List<Map<String, Object>>> getCourses(HttpServletRequest r) {
-        return ResponseEntity.ok(dataStore.getCoursesByUserId(uid(r)));
-    }
-
-    @PostMapping("/courses")
-    public ResponseEntity<Map<String, Object>> addCourse(HttpServletRequest r,
-                                                          @RequestBody Map<String, Object> b) {
-        String cn   = (String) b.get("course_name");
-        String prov = (String) b.get("provider");
-        if (cn == null || prov == null)
-            return ResponseEntity.badRequest().body(Map.of("error", "course_name and provider required"));
-        int    prog   = b.get("progress") != null ? ((Number) b.get("progress")).intValue() : 0;
-        String status = (String) b.getOrDefault("status", "Ongoing");
-        return ResponseEntity.ok(dataStore.addCourse(uid(r), cn, prov, prog, status));
-    }
 
     // ── CERTIFICATES ──────────────────────────────────────────────────────────
     @GetMapping("/certificates")

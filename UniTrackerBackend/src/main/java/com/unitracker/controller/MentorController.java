@@ -55,11 +55,6 @@ public class MentorController {
         return ResponseEntity.ok(dataStore.getCertsByUserId(id));
     }
 
-    @GetMapping("/mentees/{id}/courses")
-    public ResponseEntity<List<Map<String, Object>>> courses(@PathVariable int id) {
-        return ResponseEntity.ok(dataStore.getCoursesByUserId(id));
-    }
-
     @GetMapping("/mentees/{id}/remarks")
     public ResponseEntity<List<Map<String, Object>>> remarks(@PathVariable int id) {
         return ResponseEntity.ok(dataStore.getRemarksByMenteeId(id));
