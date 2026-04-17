@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Avatar } from "../../assets/Icons";
 import {
-  getMenteeMarksById,
   getMenteeAttendanceById,
   getMenteeCertsById,
   getMenteeRemarksById,
@@ -334,10 +333,9 @@ function MentorAttendanceTab({ menteeId }) {
 }
 
 // ── Marks tab (mentor read-only) ───────────────────────────────────────────────
-function MentorMarksTab({ menteeId, marksData }) {
+function MentorMarksTab({ menteeId }) {
   const [gpaData, setGpaData] = useState([]);
   const [gpaLoading, setGpaLoading] = useState(true);
-  const [tab, setTab] = useState("gpa");
 
   useEffect(() => {
     getMenteeGpaById(menteeId)
@@ -360,16 +358,6 @@ function MentorMarksTab({ menteeId, marksData }) {
 
   return (
     <div>
-      <div className="tabs-bar" style={{ marginBottom: 20 }}>
-        <div className={`tab-item ${tab === "gpa" ? "active" : ""}`} onClick={() => setTab("gpa")}>
-          CGPA / SGPA
-        </div>
-        <div className={`tab-item ${tab === "marks" ? "active" : ""}`} onClick={() => setTab("marks")}>
-          Subject Marks
-        </div>
-      </div>
-
-      {tab === "gpa" && (
         <div>
           {/* Stat */}
           <div className="stat-row" style={{ gridTemplateColumns: "repeat(2, 1fr)", marginBottom: 20 }}>
@@ -424,50 +412,6 @@ function MentorMarksTab({ menteeId, marksData }) {
             </div>
           )}
         </div>
-      )}
-
-      {tab === "marks" && (
-        <div>
-          {!marksData || marksData.length === 0 ? (
-            <div className="wcard">
-              <div className="wcard-body"><div className="page-sub">No subject marks found.</div></div>
-            </div>
-          ) : (
-            <div>
-              <div className="stat-row" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }}>
-                {[
-                  ["Subjects",      marksData.length],
-                  ["Highest Mark",  `${Math.max(...marksData.map(m => m.total_marks ?? 0))} / 100`],
-                  ["Lowest Mark",   `${Math.min(...marksData.map(m => m.total_marks ?? 0))} / 100`],
-                ].map(([l, v]) => (
-                  <div className="stat-card" key={l}><div className="stat-value">{v}</div><div className="stat-label">{l}</div></div>
-                ))}
-              </div>
-              <div className="wcard">
-                <div className="wcard-head"><div className="wcard-title">Subject Marks</div></div>
-                <table>
-                  <thead>
-                    <tr><th>Subject</th><th>Internal (40)</th><th>External (60)</th><th>Total</th><th>Grade</th></tr>
-                  </thead>
-                  <tbody>
-                    {marksData.map(m => (
-                      <tr key={m.id}>
-                        <td>{m.subject_name}</td>
-                        <td>{m.internal_marks}</td>
-                        <td>{m.external_marks}</td>
-                        <td><strong>{m.total_marks}</strong></td>
-                        <td>
-                          <span className={`badge ${["O","A+"].includes(m.grade) ? "badge-green" : "badge-red"}`}>{m.grade}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
@@ -475,7 +419,6 @@ function MentorMarksTab({ menteeId, marksData }) {
 // ── Main MenteeDetail ──────────────────────────────────────────────────────────
 export default function MenteeDetail({ mentee, onBack }) {
   const [activeTab,   setActiveTab]   = useState("marks");
-  const [marksData,   setMarksData]   = useState(null);
   const [certsData,   setCertsData]   = useState(null);
   const [attData,     setAttData]     = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -483,11 +426,9 @@ export default function MenteeDetail({ mentee, onBack }) {
   useEffect(() => {
     setDataLoading(true);
     Promise.all([
-      getMenteeMarksById(mentee.id),
       getMenteeCertsById(mentee.id),
       getMenteeAttendanceById(mentee.id),
-    ]).then(([marks, certs, att]) => {
-      setMarksData(marks);
+    ]).then(([certs, att]) => {
       setCertsData(certs);
       setAttData(att);
     }).catch(console.error)
@@ -536,7 +477,7 @@ export default function MenteeDetail({ mentee, onBack }) {
         <div className="page-sub" style={{ padding: 24 }}>Loading mentee data...</div>
       ) : (
         <>
-          {activeTab === "marks"        && <MentorMarksTab     menteeId={mentee.id} marksData={marksData} />}
+          {activeTab === "marks"        && <MentorMarksTab     menteeId={mentee.id} />}
           {activeTab === "attendance"   && <MentorAttendanceTab menteeId={mentee.id} />}
           {activeTab === "certificates" && <Certificates readOnly data={certsData} />}
           {activeTab === "remarks"      && <RemarksTab   mentee={mentee} />}
