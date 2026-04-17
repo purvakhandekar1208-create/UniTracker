@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8081";
+const API = import.meta.env.VITE_API_URL;
 
 export const saveToken = (token) => localStorage.setItem("token", token);
 export const getToken  = ()      => localStorage.getItem("token");
@@ -8,7 +8,7 @@ export const logout    = ()      => { localStorage.removeItem("token"); localSto
 
 const api = async (path, options = {}) => {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export const updateMenteeProfile = (fields) =>
 
 export const uploadCertificate = async (formData) => {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/api/mentee/certificates`, {
+  const res = await fetch(`${API}/api/mentee/certificates`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
