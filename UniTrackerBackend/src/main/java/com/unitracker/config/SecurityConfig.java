@@ -10,22 +10,20 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.*;
-import java.util.*;
+
+
+import org.springframework.security.config.Customizer;
 
 @Configuration @EnableWebSecurity @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
-    @Value("${app.cors.allowed-origins}")
-    private String origins;
-
     @Bean
     public SecurityFilterChain chain(HttpSecurity http) throws Exception {
         return http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(c -> c.configurationSource(cors()))
+            .cors(Customizer.withDefaults())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/api/auth/**", "/api/files/**").permitAll()
@@ -36,17 +34,5 @@ public class SecurityConfig {
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
-    }
-
-    @Bean
-    public CorsConfigurationSource cors() {
-        CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOrigins(Arrays.asList(origins.split(",")));
-        c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        c.setAllowedHeaders(List.of("*"));
-        c.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
-        s.registerCorsConfiguration("/**", c);
-        return s;
     }
 }
